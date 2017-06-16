@@ -1,0 +1,233 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{32015E55-6DC5-4D38-94C1-52A13E506D02}</ProjectGuid>
+    <RootNamespace>ExpressCaptureServer</RootNamespace>
+    <Keyword>MFCProj</Keyword>
+    <ProjectName>DatvExpressTransmitter</ProjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v110</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+    <UseOfMfc>Static</UseOfMfc>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v110</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+    <UseOfMfc>Static</UseOfMfc>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+    <LibraryPath>$(VCInstallDir)lib;$(VCInstallDir)atlmfc\lib;$(WindowsSDK_LibraryPath_x86);..\ExpressCaptureServer\ffmpeglib\lib\</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <LinkIncremental>false</LinkIncremental>
+    <LibraryPath>$(VCInstallDir)lib;$(VCInstallDir)atlmfc\lib;$(WindowsSDK_LibraryPath_x86);..\ExpressCaptureServer\ffmpeglib\lib\</LibraryPath>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <SDLCheck>true</SDLCheck>
+      <AdditionalIncludeDirectories>ffmpeglib\include\</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>quartz.lib;strmiids.lib;avcodec.lib;avdevice.lib;avfilter.lib;avformat.lib;avutil.lib;postproc.lib;swresample.lib;swscale.lib;libusb.lib;</AdditionalDependencies>
+    </Link>
+    <Midl>
+      <MkTypLibCompatible>false</MkTypLibCompatible>
+      <ValidateAllParameters>true</ValidateAllParameters>
+      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </Midl>
+    <ResourceCompile>
+      <Culture>0x0409</Culture>
+      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <SDLCheck>true</SDLCheck>
+      <AdditionalIncludeDirectories>ffmpeglib\include\</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalDependencies>quartz.lib;strmiids.lib;avcodec.lib;avdevice.lib;avfilter.lib;avformat.lib;avutil.lib;postproc.lib;swresample.lib;swscale.lib;libusb.lib;</AdditionalDependencies>
+      <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
+    </Link>
+    <Midl>
+      <MkTypLibCompatible>false</MkTypLibCompatible>
+      <ValidateAllParameters>true</ValidateAllParameters>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </Midl>
+    <ResourceCompile>
+      <Culture>0x0409</Culture>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <Text Include="ReadMe.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Codecs.h" />
+    <ClInclude Include="DialogConfigurationError.h" />
+    <ClInclude Include="DialogCaptureAudio.h" />
+    <ClInclude Include="DialogCaptureVideo.h" />
+    <ClInclude Include="DialogCodecAudio.h" />
+    <ClInclude Include="DialogCodecVideo.h" />
+    <ClInclude Include="DialogDVBS2Settings.h" />
+    <ClInclude Include="DialogDVBSSettings.h" />
+    <ClInclude Include="DialogDVBTSettings.h" />
+    <ClInclude Include="DialogExpressSettings.h" />
+    <ClInclude Include="DialogIqCalibration.h" />
+    <ClInclude Include="DialogNoiseTool.h" />
+    <ClInclude Include="DialogOutputFormat.h" />
+    <ClInclude Include="DialogSiTableSettings.h" />
+    <ClInclude Include="DVB-S2\DVB2.h" />
+    <ClInclude Include="DVB-S2\DVBS2.h" />
+    <ClInclude Include="DVB-T\dvb_t.h" />
+    <ClInclude Include="DVB-T\dvb_t_sym.h" />
+    <ClInclude Include="Dvb.h" />
+    <ClInclude Include="error_codes.h" />
+    <ClInclude Include="ExpressCaptureServer.h" />
+    <ClInclude Include="ExpressCaptureServerDlg.h" />
+    <ClInclude Include="noise.h" />
+    <ClInclude Include="Resource.h" />
+    <ClInclude Include="SampleGrabber.h" />
+    <ClInclude Include="si.h" />
+    <ClInclude Include="stdafx.h" />
+    <ClInclude Include="targetver.h" />
+    <ClInclude Include="tp.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="buffers.cpp" />
+    <ClCompile Include="Codecs.cpp" />
+    <ClCompile Include="configuration.cpp" />
+    <ClCompile Include="DialogConfigurationError.cpp" />
+    <ClCompile Include="DialogCaptureAudio.cpp" />
+    <ClCompile Include="DialogCaptureVideo.cpp" />
+    <ClCompile Include="DialogCodecAudio.cpp" />
+    <ClCompile Include="DialogCodecVideo.cpp" />
+    <ClCompile Include="DialogDVBS2Settings.cpp" />
+    <ClCompile Include="DialogDVBSSettings.cpp" />
+    <ClCompile Include="DialogDVBTSettings.cpp" />
+    <ClCompile Include="DialogExpressSettings.cpp" />
+    <ClCompile Include="DialogIqCalibration.cpp" />
+    <ClCompile Include="DialogNoiseTool.cpp" />
+    <ClCompile Include="DialogOutputFormat.cpp" />
+    <ClCompile Include="DialogSiTableSettings.cpp" />
+    <ClCompile Include="DSCapture.cpp" />
+    <ClCompile Include="DVB-S2\DVB2.cpp" />
+    <ClCompile Include="DVB-S2\dvb2_bbheader.cpp" />
+    <ClCompile Include="DVB-S2\dvb2_bch.cpp" />
+    <ClCompile Include="DVB-S2\dvb2_ldpc_encode.cpp" />
+    <ClCompile Include="DVB-S2\dvb2_ldpc_tables.cpp" />
+    <ClCompile Include="DVB-S2\dvb2_scrambler.cpp" />
+    <ClCompile Include="DVB-S2\DVBS2.cpp" />
+    <ClCompile Include="DVB-S2\dvbs2_interleave.cpp" />
+    <ClCompile Include="DVB-S2\dvbs2_modulator.cpp" />
+    <ClCompile Include="DVB-S2\dvbs2_physical.cpp" />
+    <ClCompile Include="DVB-S2\dvbs2_scrambler.cpp" />
+    <ClCompile Include="DVB-S2\dvbs2_tables.cpp" />
+    <ClCompile Include="DVB-T\dvbt_modulator.cpp" />
+    <ClCompile Include="DVB-T\dvb_conv.cpp" />
+    <ClCompile Include="DVB-T\dvb_encode.cpp" />
+    <ClCompile Include="DVB-T\dvb_interleave.cpp" />
+    <ClCompile Include="DVB-T\dvb_rs_encoder.cpp" />
+    <ClCompile Include="DVB-T\dvb_t.cpp" />
+    <ClCompile Include="DVB-T\dvb_t_bits.cpp" />
+    <ClCompile Include="DVB-T\dvb_t_enc.cpp" />
+    <ClCompile Include="DVB-T\dvb_t_i.cpp" />
+    <ClCompile Include="DVB-T\dvb_t_linux_fft.cpp" />
+    <ClCompile Include="DVB-T\dvb_t_lpf.cpp" />
+    <ClCompile Include="DVB-T\dvb_t_mod.cpp" />
+    <ClCompile Include="DVB-T\dvb_t_qam_tab.cpp" />
+    <ClCompile Include="DVB-T\dvb_t_stab.cpp" />
+    <ClCompile Include="DVB-T\dvb_t_sym.cpp" />
+    <ClCompile Include="DVB-T\dvb_t_tp.cpp" />
+    <ClCompile Include="dvb_clock.cpp" />
+    <ClCompile Include="eit.cpp" />
+    <ClCompile Include="error_codes.cpp" />
+    <ClCompile Include="es_to_ps.cpp" />
+    <ClCompile Include="Express.cpp" />
+    <ClCompile Include="ExpressCaptureServer.cpp" />
+    <ClCompile Include="ExpressCaptureServerDlg.cpp" />
+    <ClCompile Include="general.cpp" />
+    <ClCompile Include="logging.cpp" />
+    <ClCompile Include="nit.cpp" />
+    <ClCompile Include="noise.cpp" />
+    <ClCompile Include="Null.cpp" />
+    <ClCompile Include="overlay.cpp" />
+    <ClCompile Include="pat.cpp" />
+    <ClCompile Include="Pcr.cpp" />
+    <ClCompile Include="pmt.cpp" />
+    <ClCompile Include="ps_to_ts.cpp" />
+    <ClCompile Include="sdt.cpp" />
+    <ClCompile Include="Si.cpp" />
+    <ClCompile Include="stdafx.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="tdt.cpp" />
+    <ClCompile Include="timer.cpp" />
+    <ClCompile Include="txmodule.cpp" />
+    <ClCompile Include="av_buffer.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="ExpressCaptureServer.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="res\ExpressCaptureServer.rc2" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="res\ExpressCaptureServer.ico" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+  <ProjectExtensions>
+    <VisualStudio>
+      <UserProperties RESOURCE_FILE="ExpressCaptureServer.rc" />
+    </VisualStudio>
+  </ProjectExtensions>
+</Project>
