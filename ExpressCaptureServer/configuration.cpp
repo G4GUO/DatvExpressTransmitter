@@ -1247,6 +1247,6 @@ void system_stop(void) {
 		express_receive();
 		capture_stop();
 		tx_stop();
-		stop_log();
+		//stop_log();
 	}
 }

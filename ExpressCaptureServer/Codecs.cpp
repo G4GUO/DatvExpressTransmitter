@@ -10,8 +10,8 @@
 
 #define INBUF_SIZE 100000
 // 140 ms
-#define SOUND_DELAY 27000*30
-#define VIDEO_DELAY 27000*140
+#define SOUND_DELAY 27000*120
+#define VIDEO_DELAY 27000*240
 
 // Local variables
 static struct SwsContext *m_sws;
@@ -337,11 +337,13 @@ int init_codecs(CodecParams *params ){
         codec = avcodec_find_encoder(AV_CODEC_ID_MPEG2VIDEO);
         if(codec != NULL){
             m_pC[ENVC]                     = avcodec_alloc_context3(codec);
+			m_pC[ENVC]->qmax = 51;
+			//m_pC[ENVC]->rc_strategy = 1;
             m_pC[ENVC]->bit_rate           = params->v_br;// Not used CBR
             m_pC[ENVC]->bit_rate_tolerance = params->v_br/10;// Not used CBR
             m_pC[ENVC]->rc_max_rate        = params->v_br;
             m_pC[ENVC]->rc_min_rate        = params->v_br;
-            m_pC[ENVC]->rc_buffer_size     = (params->v_br)/3;
+			m_pC[ENVC]->rc_buffer_size = (params->v_br)*4 / params->v_dst_fps; //4 pictures
             m_pC[ENVC]->width              = params->v_dst_width;
 			m_pC[ENVC]->height			   = params->v_dst_height;
 			m_pC[ENVC]->sample_aspect_ratio.num = ar[0];
@@ -354,7 +356,7 @@ int init_codecs(CodecParams *params ){
 				m_pC[ENVC]->flags          = AV_CODEC_FLAG_INTERLACED_DCT | AV_CODEC_FLAG_INTERLACED_ME;
 			m_pC[ENVC]->time_base.num      = 1;
 			m_pC[ENVC]->time_base.den      = params->v_dst_fps;
-			m_pC[ENVC]->ticks_per_frame = params->v_dst_fpf == 2 ? 1 : 2;// MPEG2 & 4 (should be 2)
+			m_pC[ENVC]->ticks_per_frame = 1;// params->v_dst_fpf == 2 ? 1 : 2;// MPEG2 & 4 (should be 2)
             m_pC[ENVC]->profile            = FF_PROFILE_MPEG2_MAIN;
             m_pC[ENVC]->thread_count       = 1;
 		}else{
@@ -366,11 +368,12 @@ int init_codecs(CodecParams *params ){
         codec = avcodec_find_encoder(AV_CODEC_ID_H264);
         if(codec != NULL){
             m_pC[ENVC]                     = avcodec_alloc_context3(codec);
+			//m_pC[ENVC]->rc_strategy = 2;
             m_pC[ENVC]->bit_rate           = params->v_br;// Not used CBR
-			m_pC[ENVC]->bit_rate_tolerance = 0;//params->v_br / 10;// Not used CBR
+			m_pC[ENVC]->bit_rate_tolerance = params->v_br/10;//params->v_br / 10;// Not used CBR
             m_pC[ENVC]->rc_max_rate        = params->v_br;
             m_pC[ENVC]->rc_min_rate        = params->v_br;
-            m_pC[ENVC]->rc_buffer_size     = params->v_br/3;
+            m_pC[ENVC]->rc_buffer_size     = params->v_br/10;
             m_pC[ENVC]->width              = params->v_dst_width;
             m_pC[ENVC]->height             = params->v_dst_height;
 			m_pC[ENVC]->sample_aspect_ratio.num = params->v_ar[0];
@@ -399,7 +402,7 @@ int init_codecs(CodecParams *params ){
         if(codec != NULL){
             m_pC[ENVC]                     = avcodec_alloc_context3(codec);
             m_pC[ENVC]->bit_rate           = params->v_br;// Not used CBR
-			m_pC[ENVC]->bit_rate_tolerance = 0;//params->v_br / 10;// Not used CBR
+			m_pC[ENVC]->bit_rate_tolerance = params->v_br / 10;//params->v_br / 10;// Not used CBR
             m_pC[ENVC]->rc_max_rate        = params->v_br;
             m_pC[ENVC]->rc_min_rate        = params->v_br;
             m_pC[ENVC]->rc_buffer_size     = params->v_br/3;
