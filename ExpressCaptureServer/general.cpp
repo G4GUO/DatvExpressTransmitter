@@ -46,6 +46,7 @@ void set_modem_params(void){
 			break;
 		}
 		calculate_bitrate();
+		
 	}
 
 	if (get_txmode() == M_DVBT) {
@@ -150,7 +151,7 @@ void set_modem_params(void){
 		g_net_bitrate = g_gross_bitrate;
 	}
 
-	g_tp_tick = (27000000*8)/g_gross_bitrate;// 27 MHz, tick is the time to send one TP byte
+	g_tp_tick = (27000000*8)/g_net_bitrate;// 27 MHz, tick is the time to send one TP byte
 	g_tp_tick = g_tp_tick*188;// 27 MHz 
 }
 int64_t get_tp_tick(void){return g_tp_tick;};
@@ -162,7 +163,7 @@ uint32_t get_audio_bitrate(void){
 		return 0;
 }
 uint32_t get_tx_bitrate(void){
-	return (uint32_t)g_gross_bitrate;
+	return (uint32_t)g_net_bitrate;
 }
 
 //
