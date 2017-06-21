@@ -1,0 +1,30 @@
+Run the install program 
+If you already have Express server installed on your machine there will be nothing further to do.
+If not you will have to run Zadig to install the USB drivers.
+Instructions for using Zadig can be found on the DATV-Express Website.
+The program is fairly easy to use
+After changing a parameter hit OK 
+Then go to the file menu and click on save configuration.
+Then go to the file menu and click on restart.
+The program should then be ready to use the new parameters.
+
+If you are only changing the frequency or level then there is no reason to restart the program.
+
+At both high and low symbol rates the program does not correctly estimate the available
+bit rate and it maybe necessary to go into a file called datvexpress.txt and adjusting the
+VBITRATE twiddle factor. It simply multiplies it's estimate by the twiddle factor
+
+When selecting a Video capture device, make sure you select a format.
+Only analogue formats can be used YUV etc. I have included all the formats for debugging.
+
+This program is very CPU intensive all the video and audio compression is done in software.
+
+This is a very early Beta so I would appreciate any feedback good or bad.
+If possible pleae use the BATC forum or DATV-Express yahoo group so information can 
+be shared with others. If you are shy you can email me. I will then probably anonymise
+the comment and then post it along with a response if I believe it would help others.
+
+I am expecting you to break it!
+
+- Charles G4GUO
+
