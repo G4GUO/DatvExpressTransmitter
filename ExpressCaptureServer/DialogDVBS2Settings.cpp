@@ -294,7 +294,7 @@ void CDialogDVBS2Settings::OnBnClickedOk()
 		break;
 	case IDC_DVBS2_FEC25:
 		fmt.code_rate = CR_2_5;
-		cmd_set_dvbs2_fec("1/4");
+		cmd_set_dvbs2_fec("2/5");
 		break;
 	case IDC_DVBS2_FEC12:
 		fmt.code_rate = CR_1_2;
