@@ -10,6 +10,7 @@
 #include <memory.h>
 #include <sys/types.h>
 #include "dvb_t.h"
+#include "../Dvb.h"
 
 
 extern int m_tx_samples;
@@ -50,7 +51,40 @@ double dvb_t_get_sample_rate( void )
     }
     return srate;
 }
-void dvb_t_set_interpteter(DVBTFormat *fmt)
+double dvb_t_get_channel_bandwidth(void)
+{
+	double bw;
+
+	switch (m_format.chan)
+	{
+	case CH_8M:
+		bw = 8000000;
+		break;
+	case CH_7M:
+		bw = 7000000;
+		break;
+	case CH_6M:
+		bw = 6000000;
+		break;
+	case CH_4M:
+		bw = 4000000;
+		break;
+	case CH_3M:
+		bw = 3000000;
+		break;
+	case CH_2M:
+		bw = 2000000;
+		break;
+	case CH_1M:
+		bw = 1000000;
+		break;
+	default:
+		bw = 8000000;
+		break;
+	}
+	return bw;
+}
+void dvb_t_set_interpolater(DVBTFormat *fmt)
 {
 	switch (m_format.chan)
 	{
@@ -64,22 +98,26 @@ void dvb_t_set_interpteter(DVBTFormat *fmt)
 		fmt->ir = 1;
 		break;
 	case CH_4M:
-		fmt->ir = 2;
+		fmt->ir = 1;
 		break;
 	case CH_3M:
-		fmt->ir = 2;
+		fmt->ir = 1;
 		break;
 	case CH_2M:
-		fmt->ir = 4;
+		fmt->ir = 1;
 		break;
 	case CH_1M:
-		fmt->ir = 4;
+		fmt->ir = 2;
 		break;
 	default:
 		fmt->ir = 1;
 		break;
 	}
 }
+int dvb_t_get_interpolater(void) {
+	return m_format.ir;
+}
+
 double dvb_t_get_symbol_rate( void )
 {
     double symbol_len = 1;//default value
@@ -138,11 +176,11 @@ void dvb_t_init( void )
     // Encode the correct parameters
     m_format.chan = CH_2M;
 	m_format.co   = CO_QPSK;
-	m_format.fec  = CR_12;
+	m_format.fec  = FEC_12;
 	m_format.gi   = GI_18;
 	m_format.sf   = SF_NH;
 	m_format.tm   = TM_2K;
-	dvb_t_set_interpteter(&m_format);
+	dvb_t_set_interpolater(&m_format);
 
 	m_format.sr   = dvb_t_get_sample_rate();
 	m_format.br   = dvb_t_raw_bitrate();
@@ -166,7 +204,7 @@ void dvb_t_configure(DVBTFormat *fmt)
 {
 	// Encode the correct parameters
 	m_format = *fmt;
-	dvb_t_set_interpteter(&m_format);
+	dvb_t_set_interpolater(&m_format);
 	fmt->sr = dvb_t_get_sample_rate();
 	fmt->br = dvb_t_raw_bitrate();
 

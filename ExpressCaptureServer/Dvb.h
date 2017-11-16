@@ -3,6 +3,14 @@
 #include "tp.h"
 #include "Codecs.h"
 
+typedef struct {
+	short re;
+	short im;
+}scmplx;
+
+typedef enum { HW_DATV_EXPRESS = 1, HW_LIME_SDR, HW_ADALM_PLUTO, HW_FMCOMMSx }SdrHwType;
+
+
 extern "C"
 {
 #include <libavutil/mem.h>
@@ -89,7 +97,8 @@ void set_modem_params(void);
 int64_t get_tp_tick(void);
 uint32_t get_audio_bitrate(void);
 uint32_t get_video_bitrate(void);
-uint32_t get_tx_bitrate(void);
+uint32_t get_tx_net_bitrate(void);
+uint32_t get_tx_gross_bitrate(void);
 uint32_t si_overhead(void);
 
 // Timer
@@ -159,10 +168,20 @@ uint32_t get_dvbt_channel(void);
 uint32_t get_dvbt_mode(void);
 int get_i_dc_offset(void);
 int get_q_dc_offset(void);
+SdrHwType get_sdrhw_type(void);
+DWORD get_sdr_ip_addr(void);
+const char *get_sdr_ip_addrs(void);
+int get_tx_carrier(void);
+
+DWORD get_TSIn_ip_addr(void);
+WORD get_TSIn_port(void);
+DWORD get_TSIn_LocalNic(void);
 
 // Set commands
 void cmd_transmit(void);
 void cmd_standby(void);
+void cmd_ip_transmit(DWORD IP, int Port);
+void cmd_ip_standby(void);
 void cmd_set_video_codec(const char *codec);
 void cmd_set_audio_codec(const char *codec);
 void cmd_set_video_gop(const char *gop);
@@ -210,7 +229,7 @@ void cmd_set_dvbt_channel(const char *chan);
 void cmd_set_dvbt_mode(const char *mode);
 
 CString get_current_fec_string(void);
-uint32_t get_current_tx_frequency(void);
+uint64_t get_current_tx_frequency(void);
 int get_current_tx_level(void);
 void cmd_tx_frequency( const char * freq);
 void cmd_tx_level( const char * level);
@@ -222,6 +241,9 @@ void cmd_set_config_filename(CString name);
 void cmd_set_video_ident(BOOL ident);
 void cmd_set_i_dc_offset(int i);
 void cmd_set_q_dc_offset(int q);
+void cmd_set_sdrhw_type(const char *hw);
+void cmd_set_sdr_ip_addr(DWORD a);
+void cmd_set_TsIn_ip_addr(DWORD a, WORD port, DWORD localnic);
 
 // Buffers
 uint8_t *alloc_tx_buff(void);
@@ -244,6 +266,7 @@ void tx_buf_init(void);
 // txmodule
 void tx_start(void);
 void tx_stop(void);
+void tx_carrier(bool val);
 
 // Capture
 int  capture_start(CodecParams *params);
@@ -271,6 +294,14 @@ void vb_audio_post(uint8_t *b, int len);
 int vb_av_init(void);
 void vb_av_deinit(void);
 
+//UDP TS in	
+int udp_init(void);
+void udp_deinit(void);
+void TsIn_run();
+void TsIn_pause();
 // DVB clock
 void init_dvb_clock(void);
 int64_t dvb_get_time(void);
+
+// DVB S
+void dvb_s_init(void);

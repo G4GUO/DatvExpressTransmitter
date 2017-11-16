@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "Express DVB Transmitter"
-#define MyAppVersion "1.25"
+#define MyAppVersion "1.25p5"
 #define MyAppPublisher "DATV-Express LLC"
 #define MyAppURL "http://www.datv-express.com/"
 #define MyAppExeName "DatvExpressTransmitter.exe"
@@ -19,7 +19,7 @@ AppPublisher={#MyAppPublisher}
 AppPublisherURL={#MyAppURL}
 AppSupportURL={#MyAppURL}
 AppUpdatesURL={#MyAppURL}
-DefaultDirName=C:\DatvExpress\{#MyAppName}
+DefaultDirName=C:\DatvExpress\Pluto\{#MyAppName}
 DefaultGroupName=DatvExpress
 AllowNoIcons=yes
 OutputBaseFilename=setup
@@ -50,6 +50,10 @@ Source: "..\Release\datvexpressdvbs.rbf"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\Release\datvexpressraw16.rbf"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\Release\libusb0.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\Release\README.txt"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\libiio-win32\libiio.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\libiio-win32\libserialport-0.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\libiio-win32\libxml2.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\libiio-win32\libusb-1.0.dll"; DestDir: "{app}"; Flags: ignoreversion
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Icons]

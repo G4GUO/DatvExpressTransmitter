@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "dvb_t.h"
+#include "../Dvb.h"
 
 extern DVBTFormat m_format;
 
@@ -36,11 +37,11 @@ int dvb_t_raw_bitrate(void)
     if( m_format.co == CO_16QAM ) index = 20;
     if( m_format.co == CO_64QAM ) index = 40;
 
-    if( m_format.fec == CR_12 ) index += 0;
-    if( m_format.fec == CR_23 ) index += 4;
-    if( m_format.fec == CR_34 ) index += 8;
-    if( m_format.fec == CR_56 ) index += 12;
-    if( m_format.fec == CR_78 ) index += 16;
+    if( m_format.fec == FEC_12 ) index += 0;
+    if( m_format.fec == FEC_23 ) index += 4;
+    if( m_format.fec == FEC_34 ) index += 8;
+    if( m_format.fec == FEC_56 ) index += 12;
+    if( m_format.fec == FEC_78 ) index += 16;
 
     if( m_format.gi == GI_14 )  index += 0;
     if( m_format.gi == GI_18 )  index += 1;

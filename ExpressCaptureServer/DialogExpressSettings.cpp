@@ -6,6 +6,8 @@
 #include "DialogExpressSettings.h"
 #include "afxdialogex.h"
 #include "Dvb.h"
+#include "hardware.h"
+
 
 // CDialogExpressSettings dialog
 
@@ -31,6 +33,7 @@ void CDialogExpressSettings::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_CHECK_TX_PORTB, m_ptt_port_b);
 	DDX_Control(pDX, IDC_CHECK_TX_PORTC, m_ptt_port_c);
 	DDX_Control(pDX, IDC_CHECK_TX_PORTD, m_ptt_port_d);
+	DDX_Control(pDX, IDC_IPADDRESS_SDR_HW, m_sdr_ip);
 }
 
 
@@ -49,7 +52,7 @@ BOOL CDialogExpressSettings::OnInitDialog()
 
 	// TODO:  Add extra initialization here
 	CString text;
-	text.Format("%lu",get_current_tx_frequency());
+	text.Format("%I64d",get_current_tx_frequency());
 	m_express_frequency.SetWindowTextA(text);
 	text.Format("%d",get_current_tx_level());
 	m_express_level.SetWindowTextA(text);
@@ -62,10 +65,19 @@ BOOL CDialogExpressSettings::OnInitDialog()
 	if (ports & 0x80) m_ptt_port_d.SetCheck(1);
 
 	int mode = get_txmode();
-	if (mode == M_DVBS)  CheckRadioButton(IDC_TXMODE_DVBS, IDC_TXMODE_DVBT, IDC_TXMODE_DVBS);
+	if (mode == M_DVBS) CheckRadioButton(IDC_TXMODE_DVBS, IDC_TXMODE_DVBT, IDC_TXMODE_DVBS);
 	if (mode == M_DVBS2) CheckRadioButton(IDC_TXMODE_DVBS, IDC_TXMODE_DVBT, IDC_TXMODE_DVBS2);
 	if (mode == M_DVBT) CheckRadioButton(IDC_TXMODE_DVBS, IDC_TXMODE_DVBT, IDC_TXMODE_DVBT);
 
+	SdrHwType type = get_sdrhw_type();
+	if (type == HW_DATV_EXPRESS)  CheckRadioButton(IDC_RADIO_LIME, IDC_RADIO_FMCOMMS, IDC_RADIO_EXPRESS);
+	if (type == HW_LIME_SDR)      CheckRadioButton(IDC_RADIO_LIME, IDC_RADIO_FMCOMMS, IDC_RADIO_LIME);
+	if (type == HW_ADALM_PLUTO)   CheckRadioButton(IDC_RADIO_LIME, IDC_RADIO_FMCOMMS, IDC_RADIO_PLUTO);
+	if (type == HW_FMCOMMSx)      CheckRadioButton(IDC_RADIO_LIME, IDC_RADIO_FMCOMMS, IDC_RADIO_FMCOMMS);
+
+	m_sdr_ip.SetAddress(get_sdr_ip_addr());
+
+	
 	m_restart_required = FALSE;
 	return TRUE;  // return TRUE unless you set the focus to a control
 	// EXCEPTION: OCX Property Pages should return FALSE
@@ -78,7 +90,7 @@ void CDialogExpressSettings::OnBnClickedOk()
 	CString text;
 	int id, old_mode, old_sr;
 	m_restart_required = FALSE;
-
+	
 	old_mode = get_txmode();
 	old_sr = get_tx_symbolrate();
 
@@ -117,6 +129,28 @@ void CDialogExpressSettings::OnBnClickedOk()
 		if (old_mode != M_DVBT) m_restart_required = TRUE;
 		cmd_set_txmode("DVB-T");
 	}
+	id = GetCheckedRadioButton(IDC_RADIO_LIME, IDC_RADIO_FMCOMMS);
+	if (id == IDC_RADIO_EXPRESS) {
+		m_restart_required = TRUE;
+		cmd_set_sdrhw_type("EXPRESS");
+	}
+	if (id == IDC_RADIO_LIME) {
+		m_restart_required = TRUE;
+		cmd_set_sdrhw_type("LIME");
+	}
+	if (id == IDC_RADIO_PLUTO) {
+		m_restart_required = TRUE;
+		cmd_set_sdrhw_type("PLUTO");
+	}
+	if (id == IDC_RADIO_FMCOMMS) {
+		m_restart_required = TRUE;
+		cmd_set_sdrhw_type("FMCOMMS");
+	}
+	DWORD a;
+	m_sdr_ip.GetAddress(a);
+	cmd_set_sdr_ip_addr(a);
+
+	hw_receive();
 
 	CDialogEx::OnOK();
 }

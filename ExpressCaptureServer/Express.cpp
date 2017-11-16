@@ -15,7 +15,7 @@ static unsigned int  m_xfrs_in_progress;
 static int           m_status;
 static int           m_initialised;
 static unsigned char m_ancillary;
-static int           m_express_status;
+       int           m_express_status;
 static bool          m_si570_fitted;
 static int           m_tx_hardware;
 static int           m_sample_block_size;
@@ -25,8 +25,8 @@ BOOL m_status_tx;
 //
 // Amount of buffering for the bulk transfer
 //
-#define NR_XFER_BUFFS 40
-typedef enum{BTYPE_TS,BTYPE_16_BIT_SAMPLE,BTYPE_8_BIT_SAMPLE};
+#define NR_XFER_BUFFS 150
+enum{BTYPE_TS,BTYPE_16_BIT_SAMPLE,BTYPE_8_BIT_SAMPLE};
 
 typedef struct{
 	void *context;
@@ -76,7 +76,11 @@ void usb_context_release( void )
 	{
 		// Yes it is, release it if done
 	    if(m_context[m_index].type == BTYPE_TS ) rel_tx_buff((UCHAR*)m_context[m_index].buffer);
-        usb_reap_async_nocancel( m_context[m_index].context, USB_TIMEOUT );
+        int Result=usb_reap_async_nocancel( m_context[m_index].context, USB_TIMEOUT );
+		if(Result<0)
+		{
+			TRACE("USB timeout %d\n", GetTickCount());
+		}
         // Place context back in pool
 		m_context[m_index].inuse = 0;
 	}
@@ -125,7 +129,12 @@ void ep2_send_ts_buffer( unsigned char *b, int len )
 void ep2_send_s16_buffer(unsigned char *b, int len)
 {
 	void *ctx = usb_context_get(b,BTYPE_16_BIT_SAMPLE);
-	usb_submit_async(ctx, (char *)b, len);
+	int Result= usb_submit_async(ctx, (char *)b, len);
+	if(Result!=0)
+	{
+		TRACE("USB error %d", GetTickCount());
+	}
+	
 	usb_context_release();
 }
 void ep2_send_s8_buffer(unsigned char *b, int len)
@@ -1286,7 +1295,8 @@ int express_write_samples( scmplx *s, int len )
 void express_write_transport_stream( UCHAR *tp, INT len )
 {
     if( m_express_status != EXP_OK ) return;
-	if( tp == NULL ) return;
+	if( tp == NULL )
+		return;
      //usb_bulk_write(m_handle,EP2OUT,(char*)tp,len,USB_TIMEOUT);
 	 ep2_send_ts_buffer( tp, len );
 }
@@ -1352,7 +1362,7 @@ int express_init( FILE *fx2, FILE *fpga )
     // Find the board
     if(( m_express_status = express_find())<0)
     {
-		report_error(ERROR_EXPRESS_NOT_FOUND);
+		report_error(ERROR_SDR_NOT_FOUND);
 		express_error("Express Hardware not found");
 		m_status_s = "HW fail";
 		m_status_tx = FALSE;

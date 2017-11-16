@@ -1,15 +1,7 @@
 #ifndef EXPRESS_H
 #define EXPRESS_H
 #include <sys/types.h>
-
-
-#ifndef __SCMPLX__
-typedef struct{
-    short re;
-    short im;
-}scmplx;
-
-#endif
+#include "Dvb.h"
 
 #define USB_VENDOR     0x4B4
 #define USB_PROD       0x8613
@@ -18,7 +10,7 @@ typedef struct{
 #define EP1IN          0x81
 #define EP2OUT         0x02
 
-#define USB_TIMEOUT    100
+#define USB_TIMEOUT    300
 #define N_USB_TX_BUFFS 20
 //
 // Addresses of various I2C devices on the DATVExpress board

@@ -6,7 +6,7 @@
 #include "DialogDVBS2Settings.h"
 #include "afxdialogex.h"
 #include "Dvb.h"
-
+#include "hardware.h"
 
 // CDialogDVBS2Settings dialog
 
@@ -203,29 +203,29 @@ BOOL CDialogDVBS2Settings::OnInitDialog()
 void CDialogDVBS2Settings::OnClickedDvbs2Qpsk()
 {
 	// TODO: Add your control notification handler code here
-	validate_fec(M_QPSK);
+	validate_fec(QPSK);
 	CheckRadioButton(IDC_DVBS2_FEC14, IDC_DVBS2_FEC910, IDC_DVBS2_FEC23);
 }
 
 void CDialogDVBS2Settings::OnDvbs28psk()
 {
 	// TODO: Add your command handler code here
-	validate_fec(M_8PSK);
+	validate_fec(PSK8);
 	CheckRadioButton(IDC_DVBS2_FEC14, IDC_DVBS2_FEC910, IDC_DVBS2_FEC23);
 }
 
 void CDialogDVBS2Settings::OnDvbs216apsk()
 {
 	// TODO: Add your command handler code here
-	validate_fec(M_16APSK);
+	validate_fec(APSK16);
 	CheckRadioButton(IDC_DVBS2_FEC14, IDC_DVBS2_FEC910, IDC_DVBS2_FEC23);
 }
 
 void CDialogDVBS2Settings::OnDvbs232apsk()
 {
 	// TODO: Add your command handler code here
-	validate_fec(M_32APSK);
-	CheckRadioButton(IDC_DVBS2_FEC14, IDC_DVBS2_FEC910, IDC_DVBS2_FEC23);
+	validate_fec(APSK32);
+	CheckRadioButton(IDC_DVBS2_FEC14, IDC_DVBS2_FEC910, IDC_DVBS2_FEC34);
 }
 
 
@@ -260,28 +260,23 @@ void CDialogDVBS2Settings::OnBnClickedOk()
 
 	id = GetCheckedRadioButton(IDC_DVBS2_RO_35, IDC_DVBS2_RO_20);
     // Only 0.35 rolloff supported due to FPGA size
-	fmt.roll_off = RO_0_35;
-	cmd_set_dvbs2_rolloff("0.35");
-	express_set_filter(RO_35);
-	/*
 	switch (id) {
 	case IDC_DVBS2_RO_35:  
 		fmt.roll_off = RO_0_35;
 		cmd_set_dvbs2_rolloff("0.35");
-		express_set_filter(RO_35);
+		hw_set_filter(RO_35);
 		break;
 	case IDC_DVBS2_RO_25:  
 		fmt.roll_off = RO_0_25;
 		cmd_set_dvbs2_rolloff("0.25");
-		express_set_filter(RO_35);
+		hw_set_filter(RO_25);
 		break;
 	case IDC_DVBS2_RO_20:  
 		fmt.roll_off = RO_0_20;
 		cmd_set_dvbs2_rolloff("0.20");
-		express_set_filter(RO_20);
+		hw_set_filter(RO_20);
 		break;
 	}
-	*/
 	id = GetCheckedRadioButton(IDC_DVBS2_FEC14, IDC_DVBS2_FEC910);
 	switch(id) {
 	case IDC_DVBS2_FEC14:    
@@ -294,7 +289,7 @@ void CDialogDVBS2Settings::OnBnClickedOk()
 		break;
 	case IDC_DVBS2_FEC25:
 		fmt.code_rate = CR_2_5;
-		cmd_set_dvbs2_fec("1/4");
+		cmd_set_dvbs2_fec("2/5");
 		break;
 	case IDC_DVBS2_FEC12:
 		fmt.code_rate = CR_1_2;

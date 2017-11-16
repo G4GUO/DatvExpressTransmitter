@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include <memory.h>
 #include <stdio.h>
+#include "../Dvb.h"
 #include "dvb_t.h"
 
 
@@ -145,62 +146,62 @@ void build_tp_block( void )
 
 	// Code rates
 
-        if( m_format.fec == CR_12 )
+        if( m_format.fec == FEC_12 )
 	{
                 s[0][30] = 0;
                 s[0][31] = 0;
                 s[0][32] = 0;
 	}
-        if( m_format.fec == CR_23 )
+        if( m_format.fec == FEC_23 )
 	{
                 s[0][30] = 0;
                 s[0][31] = 0;
                 s[0][32] = 1;
 	}
-        if( m_format.fec == CR_34 )
+        if( m_format.fec == FEC_34 )
 	{
                 s[0][30] = 0;
                 s[0][31] = 1;
                 s[0][32] = 0;
 	}
-        if( m_format.fec == CR_56 )
+        if( m_format.fec == FEC_56 )
 	{
                 s[0][30] = 0;
                 s[0][31] = 1;
                 s[0][32] = 1;
 	}
-        if( m_format.fec == CR_78 )
+        if( m_format.fec == FEC_78 )
 	{
                 s[0][30] = 1;
                 s[0][31] = 0;
                 s[0][32] = 0;
 	}
 
-        if( m_format.fec == CR_12 )
+        if( m_format.fec == FEC_12 )
 	{
                 s[0][33] = 0;
                 s[0][34] = 0;
                 s[0][35] = 0;
 	}
-        if( m_format.fec == CR_23 )
+        if( m_format.fec == FEC_23 )
 	{
                 s[0][33] = 0;
                 s[0][34] = 0;
                 s[0][35] = 1;
 	}
-        if( m_format.fec == CR_34 )
+        if( m_format.fec == FEC_34 )
 	{
                 s[0][33] = 0;
                 s[0][34] = 1;
                 s[0][35] = 0;
 	}
-        if( m_format.fec == CR_56 )
+        if( m_format.fec == FEC_56 )
 	{
                 s[0][33] = 0;
                 s[0][34] = 1;
                 s[0][35] = 1;
 	}
-        if( m_format.fec == CR_78 )
+        if( m_format.fec == FEC_78 )
 	{
                 s[0][33] = 1;
                 s[0][34] = 0;

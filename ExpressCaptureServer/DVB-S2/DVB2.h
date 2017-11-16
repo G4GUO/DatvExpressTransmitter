@@ -211,6 +211,7 @@ protected:
 public:
     // encode a new transport packet
 //    virtual void physical(void);
+	void reset(void);
     DVB2();
     ~DVB2();
 };

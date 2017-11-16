@@ -6,7 +6,7 @@
 #include "DialogIqCalibration.h"
 #include "afxdialogex.h"
 #include "Dvb.h"
-#include "express.h"
+#include "hardware.h"
 
 // CDialogIqCalibration dialog
 
@@ -54,7 +54,7 @@ BOOL CDialogIqCalibration::OnInitDialog()
 	m_i_offset_text.SetWindowTextA(text);
 	text.Format("%d", m_q_value);
 	m_q_offset_text.SetWindowTextA(text);
-	express_receive();
+	hw_receive();
 
 	return TRUE;  // return TRUE unless you set the focus to a control
 				  // EXCEPTION: OCX Property Pages should return FALSE
@@ -75,7 +75,7 @@ void CDialogIqCalibration::OnDeltaposSpinICalibraion(NMHDR *pNMHDR, LRESULT *pRe
 		CString text;
 		text.Format("%d", m_i_value);
 		m_i_offset_text.SetWindowTextA(text);
-		express_set_ical(m_i_value);
+		hw_set_ical(m_i_value);
 	}
 
 	*pResult = 0;
@@ -96,7 +96,8 @@ void CDialogIqCalibration::OnDeltaposSpinQCalibraion(NMHDR *pNMHDR, LRESULT *pRe
 		CString text;
 		text.Format("%d", m_q_value);
 		m_q_offset_text.SetWindowTextA(text);
-		express_set_qcal(m_q_value);
+		//express_set_qcal(m_q_value);
+		hw_set_qcal(m_q_value);
 	}
 
 	*pResult = 0;
@@ -107,12 +108,12 @@ void CDialogIqCalibration::OnClickedCheckEnableIqCalibration()
 {
 	// TODO: Add your control notification handler code here
 	if (m_iq_enable.GetCheck() == TRUE) {
-		express_set_iqcalibrate(TRUE);
-		express_transmit();
+		hw_set_iqcalibrate(TRUE);
+		hw_transmit();
 	}
 	else {
-		express_set_iqcalibrate(FALSE);
-		express_receive();
+		hw_set_iqcalibrate(FALSE);
+		hw_receive();
 	}
 }
 
@@ -125,10 +126,10 @@ void CDialogIqCalibration::OnCancel()
 	// Go back to the old values
 	m_i_value = get_i_dc_offset();
 	m_q_value = get_q_dc_offset();
-	express_set_iqcalibrate(FALSE);
-	express_set_ical(m_i_value);
-	express_set_qcal(m_q_value);
-	express_receive();
+	hw_set_iqcalibrate(FALSE);
+	hw_set_ical(m_i_value);
+	hw_set_qcal(m_q_value);
+	hw_receive();
 	CDialogEx::OnCancel();
 }
 
@@ -139,9 +140,9 @@ void CDialogIqCalibration::OnOK()
 	// Save the new vaklues
 	cmd_set_i_dc_offset(m_i_value);
 	cmd_set_q_dc_offset(m_q_value);
-	express_set_iqcalibrate(FALSE);
-	express_set_ical(m_i_value);
-	express_set_qcal(m_q_value);
-	express_receive();
+	hw_set_iqcalibrate(FALSE);
+	hw_set_ical(m_i_value);
+	hw_set_qcal(m_q_value);
+	hw_receive();
 	CDialogEx::OnOK();
 }

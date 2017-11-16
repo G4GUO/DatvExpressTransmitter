@@ -97,4 +97,15 @@ public:
 	afx_msg void OnOptionsIqcalibration();
 	afx_msg void OnOptionsNoisetool();
 	afx_msg void OnMenuSelect(UINT nItemID, UINT nFlags, HMENU hSysMenu);
+	afx_msg void OnEnChangeNetaddress1();
+	afx_msg void OnBnClickedTsinmode();
+	CIPAddressCtrl m_IpTsin;
+	
+	int m_TsinPort;
+	BOOL m_TsInMode;
+	DWORD m_TsInAddress;
+	afx_msg void OnIpnFieldchangedIpaddressTsin(NMHDR *pNMHDR, LRESULT *pResult);
+	afx_msg void OnCbnSelchangeCombo1();
+	CComboBox m_ListNic;
+	CString m_sLocalNic;
 };

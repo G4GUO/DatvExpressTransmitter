@@ -3,6 +3,7 @@
 #include "Dvb.h"
 #include "error_codes.h"
 #include "DVB-T\dvb_t.h"
+#include "hardware.h"
 
 static int g_sr;
 static int g_fec[2];
@@ -45,8 +46,8 @@ void set_modem_params(void){
 			g_fec[1] = 8;
 			break;
 		}
+		dvb_s_init();
 		calculate_bitrate();
-		
 	}
 
 	if (get_txmode() == M_DVBT) {
@@ -59,7 +60,7 @@ void set_modem_params(void){
 		fmt.ir   = 1;
 		fmt.sf   = SF_NH;
 		dvb_t_configure(&fmt);
-		express_set_sr(fmt.sr);
+		hw_set_sr(fmt.sr);
 		calculate_bitrate();
 	}
 
@@ -150,8 +151,10 @@ void set_modem_params(void){
 		}
 		g_net_bitrate = g_gross_bitrate;
 	}
+	theDvbS2.reset();
 
-	g_tp_tick = (27000000*8)/g_net_bitrate;// 27 MHz, tick is the time to send one TP byte
+//	g_tp_tick = (27000000*8)/g_gross_bitrate;// 27 MHz, tick is the time to send one TP byte
+	g_tp_tick = (27000000 * 8) / g_net_bitrate;// 27 MHz, tick is the time to send one TP byte
 	g_tp_tick = g_tp_tick*188;// 27 MHz 
 }
 int64_t get_tp_tick(void){return g_tp_tick;};
@@ -162,8 +165,11 @@ uint32_t get_audio_bitrate(void){
 	else
 		return 0;
 }
-uint32_t get_tx_bitrate(void){
+uint32_t get_tx_net_bitrate(void){
 	return (uint32_t)g_net_bitrate;
+}
+uint32_t get_tx_gross_bitrate(void) {
+	return (uint32_t)g_gross_bitrate;
 }
 
 //

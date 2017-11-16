@@ -64,12 +64,6 @@ extern "C" {
 #define SF_A2    2
 #define SF_A4    3
 
-#define CR_12    0
-#define CR_23    1
-#define CR_34    2
-#define CR_56    3
-#define CR_78    4
-
 #define GI_132   0
 #define GI_116   1
 #define GI_18    2
@@ -98,7 +92,7 @@ typedef struct{
 	int br;
 }DVBTFormat;
 
-#define AVG_E8 (1.0/600.0)
+#define AVG_E8 (1.0/300.0)
 //#define AVG_E2 (1.0/1704.0)
 #define AVG_E2 (1.0/150.0)
 
@@ -160,7 +154,9 @@ void   dvb_t_init( void );
 void   dvb_t_deinit( void );
 void   dvb_t_re_init( void );
 double dvb_t_get_sample_rate( void );
+double dvb_t_get_channel_bandwidth( void );
 double dvb_t_get_symbol_rate( void );
+int dvb_t_get_interpolater(void);
 
 // dvb_t_qam_tab.cpp
 void build_tx_sym_tabs( void );
