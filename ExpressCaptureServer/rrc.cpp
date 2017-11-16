@@ -64,8 +64,8 @@ void window_filter(float *filter, int N) {
 	// Build the window
 	for (int i = -N / 2, j = 0; i < N / 2; i++, j++)
 	{
-		filter[j]= (0.54f - 0.46f * cosf((2.0f * (float)M_PI*i) / (N - 1)))*filter[j];
-		//filter[j] = (0.5f*(1.0f + cosf((2.0f*(float)M_PI*i) / N)))*filter[j];
+		//filter[j]= (0.54f - 0.46f * cosf((2.0f * (float)M_PI*i) / (N - 1)))*filter[j];
+		filter[j] = (0.5f*(1.0f + cosf((2.0f*(float)M_PI*i) / N)))*filter[j];
 	}
 }
 void make_short(short *out, float *in, int len) {
