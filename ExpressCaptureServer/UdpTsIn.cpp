@@ -138,17 +138,22 @@ int get_udp_buffer(UCHAR *b, INT len)
 							   // get a new buffer
 		bytes_left = recvfrom(m_sockID, (char*)m_udp_buffer, TP_SIZE * 7, 0, (struct sockaddr *)&m_fepAddr, &m_sock_len);
 		offset = 0;// Start at the begining of the buffer
-		if (bytes_left > 0)
+		if (bytes_left >= 0)
 		{
-			// Copy the remainder of the data
-			memcpy(&b[start], m_udp_buffer, to_do);
-			offset = to_do;
-			bytes_left -= to_do;
+			if (bytes_left > 0)
+			{
+				// Copy the remainder of the data
+				memcpy(&b[start], m_udp_buffer, to_do);
+				offset = to_do;
+				bytes_left -= to_do;
+			}
+
 		}
 		else
 		{
 			// Something has gone horribly wrong
 			bytes_left = 0;
+			Sleep(100);
 			return 0;
 		}
 	}
@@ -184,7 +189,11 @@ UINT udp_thread(LPVOID pParam) {
 		else
 			Sleep(0);
 		b = alloc_tx_buff();
-		while(get_udp_buffer(b, TP_SIZE)==0) Sleep(0);
+		while (get_udp_buffer(b, TP_SIZE) == 0)
+		{
+			
+			Sleep(0);
+		}
 		if (b[0] != 0x47)
 		{
 			TRACE("NOT SYNC\n");
@@ -193,7 +202,7 @@ UINT udp_thread(LPVOID pParam) {
 		{
 			if (((b[1] == 0x1F) && (b[2] == 0xFF))) //remove null packets
 			{
-				post_tx_buff(b);
+				//post_tx_buff(b); 
 			}
 			else
 			{
