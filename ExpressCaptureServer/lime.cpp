@@ -1,7 +1,7 @@
 #include "stdafx.h"
 #include "Dvb.h"
 #include "hardware.h"
-#if _WIN64
+
 
 #include <LimeSuite.h>
 
@@ -61,16 +61,20 @@ int limesdr_init() {
 	lms_info_str_t list[8];
 	if ((n = LMS_GetDeviceList(list)) < 0)
 		return -1;
-
+	
 	if (device == NULL) {
-		if (LMS_Open(&device, list[0], NULL))
-			return -1;
+		int i ;
+		for (i = 0; i < n; i++) if (strstr(list[i], "LimeSDR") != NULL) break;
+		if (i == n) return -1;
+		if(LMS_Open(&device, list[i], NULL)!=0) return -1; // We can't open any of device
 	}
 
 
 	if (LMS_Init(device) != 0)
+	{
+		AfxMessageBox("LimeSDR failed to init");
 		return -1;
-
+	}
 	LMS_Reset(device);
 
 	if (LMS_EnableChannel(device, LMS_CH_TX, 0, false) != 0) //Not enable
@@ -238,9 +242,3 @@ void limesdr_set_ical(char offset)
 	m_Calib = (m_Calib & 0xFF) + offset<<8;
 	LMS_WriteLMSReg(device, 0x204, m_Calib);
 }
-#else
-
-void lime_tx_samples(scmplx *s, int len) {
-
-}
-#endif
