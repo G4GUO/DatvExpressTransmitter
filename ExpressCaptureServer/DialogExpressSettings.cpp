@@ -91,6 +91,9 @@ void CDialogExpressSettings::OnBnClickedOk()
 	int id, old_mode, old_sr;
 	m_restart_required = FALSE;
 	
+	hw_receive();
+	
+
 	old_mode = get_txmode();
 	old_sr = get_tx_symbolrate();
 
@@ -150,7 +153,7 @@ void CDialogExpressSettings::OnBnClickedOk()
 	m_sdr_ip.GetAddress(a);
 	cmd_set_sdr_ip_addr(a);
 
-	hw_receive();
+	set_modem_params();
 
 	CDialogEx::OnOK();
 }
