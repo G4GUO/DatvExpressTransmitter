@@ -221,11 +221,11 @@ int fmc_init(void)
 	// Listen to ctrl+c and FMC_ERROR
 	signal(SIGINT, handle_sig);
 
-	float BwKhz = 500.0;
+	float BwKhz = 5000.0;
 
 	// RX stream config
 	rxcfg.bw_hz = KHZ(BwKhz);   // 2 MHz rf bandwidth
-	rxcfg.fs_hz = MHZ(1);   // 2.0 MS/s rx sample rate
+	rxcfg.fs_hz = MHZ(2.0);   // 2.0 MS/s rx sample rate
 	rxcfg.lo_hz = GHZ(1.3); // 1.3 GHz rf frequency
 	rxcfg.rfport = "A_BALANCED"; // port A (select for rf freq.)
 
@@ -342,7 +342,7 @@ void fmc_load_tx_filter(short *fir, int taps, int ratio, bool enable) {
 	int clen = 0;
 	clen += sprintf_s(buf + clen, buffsize - clen, "RX 3 GAIN 0 DEC %d\n", ratio);
 	clen += sprintf_s(buf + clen, buffsize - clen, "TX 3 GAIN 0 INT %d\n", ratio);
-	clen += sprintf_s(buf + clen, buffsize - clen, "BWTX %d\n", 1000000);
+	clen += sprintf_s(buf + clen, buffsize - clen, "BWTX %d\n", 2000000);
 	for (int i = 0; i < taps; i++) clen += sprintf_s(buf + clen, buffsize - clen, "%d,%d\n", fir[i], fir[i]);
 	//for (int i = 0; i < taps; i++) clen += sprintf_s(buf + clen, buffsize - clen, "%d\n", fir[i]);
 	clen += sprintf_s(buf + clen, buffsize - clen, "\n");
