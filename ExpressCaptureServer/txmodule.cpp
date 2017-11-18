@@ -103,7 +103,7 @@ UINT express_tx_thread(LPVOID pParam)
 					hw_leave_critical();
 					//express_write_16_bit_samples(theDvbS2.pl_get_frame(), len);
 				}
-				//rel_tx_buff(b);
+				rel_tx_buff(b);
 			}
 			else
 			{
