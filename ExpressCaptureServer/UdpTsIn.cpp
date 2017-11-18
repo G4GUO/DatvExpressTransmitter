@@ -147,6 +147,8 @@ int get_udp_buffer(UCHAR *b, INT len)
 				offset = to_do;
 				bytes_left -= to_do;
 			}
+			else
+				return 0;
 
 		}
 		else
