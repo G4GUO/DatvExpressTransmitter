@@ -25,9 +25,9 @@ BOOL m_status_tx;
 //
 // Amount of buffering for the bulk transfer
 //
-#define NR_XFER_BUFFS 150
+#define NR_XFER_BUFFS 200
 
-#define NR_SBLOCKS   150
+#define NR_SBLOCKS   200
 #define SIZE_SBLOCKS 50000
 
 enum{BTYPE_TS,BTYPE_16_BIT_SAMPLE,BTYPE_8_BIT_SAMPLE};
