@@ -1,4 +1,11 @@
 #include "stdafx.h"
+#include "liquiddsp/liquid.h"
+
+#ifdef _WIN64
+#pragma comment(lib, "liquiddsp/libliquid64.lib")
+#else
+#pragma comment(lib, "liquiddsp/libliquid32.lib")
+#endif
 #include "Dvb.h"
 #define USE_MATH_DEFINES
 #include <math.h>
@@ -13,6 +20,8 @@ static float *m_f_filter = NULL;
 // Working space for the filter
 static scmplx *m_fbuff;
 static int     m_fbuff_size;
+
+
 //
 // Set the overall gain of the filter
 //
@@ -70,7 +79,7 @@ void window_filter(float *filter, int N) {
 }
 void make_short(short *out, float *in, int len) {
 	for (int i = 0; i < len; i++) {
-		out[i] = (short)round((in[i] * 32768));
+		out[i] = (short)round((in[i] * 32767));
 	}
 }
 void build_lpf_filter(float *filter, float bw, int ntaps ) {
@@ -179,11 +188,14 @@ void liquid_firdes_rrcos(unsigned int _k,
 	}
 }
 
+
+
+
 //
 // the length must always be even and a multiple of 16
 //
 short *rrc_make_filter(float roff, int ratio, int taps) {
-	// Create the over sampled mother filter
+	
 	float *filter = (float*)malloc(sizeof(float)*taps);
 	// Set last coefficient to zero
 	filter[taps-1] = 0;
@@ -208,9 +220,9 @@ float *rrc_make_f_filter(float roff, int ratio, int taps) {
 	// Set last coefficient to zero
 	filter[taps - 1] = 0;
 	// RRC filter must always be odd length
-		liquid_firdes_rrcos(ratio, taps/ratio/2 , roff, 0, filter); // Seems not working at 1MSPS
-	//build_rrc_filter(filter, roff, taps , ratio);
-	//window_filter(filter, taps ); // Need information about this task
+		//liquid_firdes_rrcos(ratio, taps/ratio/2 , roff, 0, filter); // Seems not working at 1MSPS
+	build_rrc_filter(filter, roff, taps , ratio);
+	window_filter(filter, taps ); // Hamming window
 	set_filter_gain(filter, 0.8f, taps);
 	// Free memory from last filter if it exsists
 	if (m_filter != NULL) free(m_filter);
@@ -257,4 +269,44 @@ int rrc_filter(scmplx *in, scmplx *out, int len) {
 		out[(i*2)+1] = filter2(&m_fbuff[i], &m_filter[0]);
 	}
 	return (len * 2);
+}
+
+int Interpolate(scmplx *in, scmplx **out, int len)
+{
+	 static scmplx *InterpolatedSamples=NULL;
+	 static liquid_float_complex  *fInterpolatedSamples = NULL;
+	 static int InterPolatedLen = 0;
+	 static resamp2_crcf q;
+	 int OverSample = 1;
+	 
+	 if(InterPolatedLen <len)
+	 {
+		 if (InterpolatedSamples != NULL) free(InterpolatedSamples);
+
+		 InterPolatedLen = len* (1 << OverSample);
+		 InterpolatedSamples = (scmplx*)malloc(InterPolatedLen * sizeof(scmplx));
+		 if (fInterpolatedSamples == NULL)
+		 {
+			 fInterpolatedSamples = (liquid_float_complex *)malloc((1 << OverSample) * sizeof(liquid_float_complex));
+			 q = resamp2_crcf_create(3, 0.0f, -60.0);
+		 }
+	 }
+	 for (int i = 0; i < len; i++)
+	 {
+		 liquid_float_complex Sample;
+		 Sample.real = in[i].re / 32767.0;
+		 Sample.imag = in[i].im / 32767.0;
+		 resamp2_crcf_interp_execute(q, Sample, fInterpolatedSamples);
+		 
+		 for (int j = 0; j < (1 << OverSample); j++)
+		 {
+			 InterpolatedSamples[i*(1 << OverSample) + j].re = (short)round((fInterpolatedSamples[j].real * 32767));
+			 InterpolatedSamples[i*(1 << OverSample) + j].im = (short)round((fInterpolatedSamples[j].imag * 32767));
+			 //TRACE("%f %f->%d %d\n", fInterpolatedSamples[j].real, fInterpolatedSamples[j].imag, InterpolatedSamples[i*(1 << OverSample) + j].re, InterpolatedSamples[i*(1 << OverSample) + j].im);
+		 }
+		
+	 }
+
+	 *out = InterpolatedSamples;
+	 return InterPolatedLen;
 }

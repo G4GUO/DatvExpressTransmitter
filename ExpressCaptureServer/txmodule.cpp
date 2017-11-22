@@ -149,7 +149,7 @@ UINT lime_tx_thread(LPVOID pParam)
 		else
 		{
 			int Queue = get_tx_buf_qsize();
-			if (Queue < 100)
+			if (Queue < 200)
 			{
 				TRACE("Buff is %d\n", Queue);
 				for (int i = 0; i < 100; i++)
@@ -170,6 +170,7 @@ UINT lime_tx_thread(LPVOID pParam)
 					len = qpsk_encode(m_dibits, m_samples, len);
 					hw_enter_critical();
 					lime_tx_samples(m_samples, len);
+					
 					hw_leave_critical();
 					rel_tx_buff(b);
 				}
