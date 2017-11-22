@@ -148,8 +148,11 @@ int get_udp_buffer(UCHAR *b, INT len)
 				bytes_left -= to_do;
 			}
 			else
+			{
+				bytes_left = 0;
+				Sleep(0);
 				return 0;
-
+			}
 		}
 		else
 		{
@@ -191,6 +194,7 @@ UINT udp_thread(LPVOID pParam) {
 		else
 			Sleep(0);
 		b = alloc_tx_buff();
+		if (b == NULL) AfxMessageBox("Out of memory");
 		while (get_udp_buffer(b, TP_SIZE) == 0)
 		{
 			
