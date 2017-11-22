@@ -28,6 +28,7 @@ float *rrc_make_f_filter(float roff, int ratio, int taps);
 short *lpf_make_filter(float bw,   int ratio,   int taps);
 // This interpolates by 2 
 int rrc_filter(scmplx *in, scmplx *out, int len);
+int Interpolate(scmplx *in, scmplx **out, int len);
 
 // FMCOMMS specific libraries
 int fmc_init(void);
