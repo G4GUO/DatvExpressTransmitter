@@ -114,6 +114,9 @@
     <ClInclude Include="hardware.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="liquiddsp\liquid.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ExpressCaptureServer.cpp">

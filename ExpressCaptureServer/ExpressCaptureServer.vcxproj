@@ -74,8 +74,8 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <LibraryPath>C:\Users\Dell\Documents\ExpressCaptureServer\libiio-win32;..\ExpressCaptureServer\ffmpeglib\lib\;$(UniversalCRT_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);$(VC_LibraryPath_x86);</LibraryPath>
-    <IncludePath>$(UniversalCRT_IncludePath);C:\Users\Dell\Documents\ExpressCaptureServer\libiio-win32;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Users\Dell\LimeSuite\build32\src\Release;C:\Users\Dell\Documents\ExpressCaptureServer\libiio-win32;..\ExpressCaptureServer\ffmpeglib\lib\;$(UniversalCRT_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);$(VC_LibraryPath_x86)</LibraryPath>
+    <IncludePath>$(UniversalCRT_IncludePath);C:\Users\Dell\Documents\ExpressCaptureServer\libiio-win32;$(IncludePath);C:\Users\Dell\LimeSuite\src\lime\;C:\Users\Dell\LimeSuite\src\lms7002m\;</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
@@ -84,8 +84,8 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <LibraryPath>C:\Users\Dell\Documents\ExpressCaptureServer\libiio-win32;..\ExpressCaptureServer\ffmpeglib\lib\;$(UniversalCRT_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);$(VC_LibraryPath_x86);</LibraryPath>
-    <IncludePath>$(UniversalCRT_IncludePath);C:\Users\Dell\Documents\ExpressCaptureServer\libiio-win32;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Users\Dell\LimeSuite\build32\src\Release;C:\Users\Dell\Documents\ExpressCaptureServer\libiio-win32;..\ExpressCaptureServer\ffmpeglib\lib\;$(UniversalCRT_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);$(VC_LibraryPath_x86)</LibraryPath>
+    <IncludePath>C:\Users\Dell\Documents\gitdatvexpress\DatvExpressTransmitter\ExpressCaptureServer\liquiddsp\;$(UniversalCRT_IncludePath);C:\Users\Dell\Documents\ExpressCaptureServer\libiio-win32;$(IncludePath);C:\Users\Dell\LimeSuite\src\lime\;C:\Users\Dell\LimeSuite\src\lms7002m\</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
@@ -104,7 +104,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>libiio.lib;quartz.lib;strmiids.lib;avcodec.lib;avdevice.lib;avfilter.lib;avformat.lib;avutil.lib;postproc.lib;swresample.lib;swscale.lib;libusb.lib</AdditionalDependencies>
+      <AdditionalDependencies>libiio.lib;quartz.lib;strmiids.lib;avcodec.lib;avdevice.lib;avfilter.lib;avformat.lib;avutil.lib;postproc.lib;swresample.lib;swscale.lib;libusb.lib;LimeSuite.lib</AdditionalDependencies>
     </Link>
     <Midl>
       <MkTypLibCompatible>false</MkTypLibCompatible>
@@ -158,7 +158,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>libiio.lib;quartz.lib;strmiids.lib;avcodec.lib;avdevice.lib;avfilter.lib;avformat.lib;avutil.lib;postproc.lib;swresample.lib;swscale.lib;libusb.lib</AdditionalDependencies>
+      <AdditionalDependencies>libiio.lib;quartz.lib;strmiids.lib;avcodec.lib;avdevice.lib;avfilter.lib;avformat.lib;avutil.lib;postproc.lib;swresample.lib;swscale.lib;libusb.lib;LimeSuite.lib</AdditionalDependencies>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
     </Link>
     <Midl>
@@ -231,6 +231,7 @@
     <ClInclude Include="ExpressCaptureServerDlg.h" />
     <ClInclude Include="extender.h" />
     <ClInclude Include="hardware.h" />
+    <ClInclude Include="liquiddsp\liquid.h" />
     <ClInclude Include="noise.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="SampleGrabber.h" />
