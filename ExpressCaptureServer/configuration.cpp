@@ -1196,7 +1196,7 @@ int system_restart(void) {
 	params.a_br = get_audio_bitrate();
 	params.v_codec = g_video_codec;
 	params.a_codec = g_audio_codec;
-	params.a_codec = AV_CODEC_ID_MP2;// Force it to this as AAC requires Planar floating point
+	//params.a_codec = AV_CODEC_ID_MP2;// Force it to this as AAC requires Planar floating point
 	// Retrieve the capture devices aspect ratio
 	params.v_ar[0] = 1;
 	params.v_ar[1] = 1;
