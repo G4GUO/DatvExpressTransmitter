@@ -67,10 +67,11 @@ BOOL CDialogOutputFormat::OnInitDialog()
 
 	// TODO: Add extra initialization here
 	m_onair_video_format.AddString("1920 1080 30");
-	m_onair_video_format.AddString("720 480 30");
 	m_onair_video_format.AddString("1920 1080 25");
+	m_onair_video_format.AddString("720 480 30");
 	m_onair_video_format.AddString("720 576 25");
-
+	m_onair_video_format.AddString("352 288 25");
+	m_onair_video_format.AddString("352 240 15");
 	CString fmts[50];
 
 	int n = LoadOnAirFormatsFromDisk(50, fmts);
