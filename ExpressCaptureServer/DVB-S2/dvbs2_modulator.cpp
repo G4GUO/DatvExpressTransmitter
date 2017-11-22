@@ -8,7 +8,7 @@ void DVBS2::modulator_configuration(void)
 {
         double r0,r1,r2,r3;
         double m = 1.0;
-        r0 = 0.9*m;// I am not sure why this needs to be 0.9 but 32APSK does not work if == 1.0
+        r0 = 1.0*m;// I am not sure why this needs to be 0.9 but 32APSK does not work if == 1.0
         r1 = m;
 	// BPSK
         m_bpsk[0][0].re = (short)((r0*cos(1*M_PI/4.0))*CP);
