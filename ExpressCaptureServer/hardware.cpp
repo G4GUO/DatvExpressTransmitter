@@ -159,7 +159,7 @@ void hw_set_sr(double sr) {
 		}
 	}
 	if (m_hw_type == HW_LIME_SDR) {
-		limesdr_set_sr(sr,16);
+		limesdr_set_sr(sr,2);
 	}
 	LeaveCriticalSection(&mutex_hw);
 }

@@ -26,27 +26,41 @@ BOOL m_limesdr_tx = false;
 double m_sr = 0;
 float_type ShiftNCO[16] = { 1000000,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 };
 float m_gain = 0.0;
-int m_oversample = 1;
-
+int m_oversample = 0;
+int m_Bandwidth = 2000000;
 int OVERSAMPLE = 16;
 
-int lime_tx_samples(scmplx *s, int len) {
+int lime_tx_samples(scmplx *s, int len)
+{
 	if (m_running == false) return 0;
+	if (m_limesdr_tx == false) return 0;
 	static int debugCnt = 0;
-	
-		//memset(s, 0, len * sizeof(scmplx));
-		int SampleSent = 0;
-		if ((SampleSent = LMS_SendStream(&streamId, s, len, NULL, 500)) != len)
+	int SampleSent;
+
+	if (m_oversample == 0)
+	{
+		if ((SampleSent = LMS_SendStream(&streamId, s, len, NULL, 100)) != len)
 		{
 			TRACE("len %d -> SampleSent %d \n", len, SampleSent);
 		}
+	}
+	else
+	{
+		static scmplx *AfterInter;
+		int InterLen = Interpolate(s, &AfterInter, len);
+		if ((SampleSent = LMS_SendStream(&streamId, AfterInter, InterLen, NULL, 100)) != InterLen)
+		{
+			TRACE("len %d -> SampleSent %d \n", InterLen, SampleSent);
+		}
+		
+	}
 	
 	debugCnt++;
-	if ((debugCnt % 10) == 0)
+	if ((debugCnt % 100) == 0)
 	{
-	lms_stream_status_t TxStatus;
-	LMS_GetStreamStatus(&streamId, &TxStatus);
-	TRACE("Filled %d SymbolRate %f\n", TxStatus.fifoFilledCount,TxStatus.sampleRate);
+		static lms_stream_status_t TxStatus;
+		LMS_GetStreamStatus(&streamId, &TxStatus);
+		TRACE("Filled %d SymbolRate %f\n", TxStatus.fifoFilledCount,TxStatus.sampleRate);
 	
 	}
 	return 0;
@@ -100,6 +114,7 @@ void limesdr_deinit(void) {
 	if (m_running == false) return;
 	m_running = false;
 	int res;
+	m_limesdr_tx = false;
 	res= LMS_StopStream(&streamId);
 	res = LMS_EnableChannel(device, LMS_CH_TX, 0, false);
 	res= LMS_DestroyStream(device, &streamId);
@@ -120,10 +135,13 @@ void limesdr_set_freq(double freq) {
 void limesdr_set_level(int level) {
 
 	if (m_running == false) return;
+	BOOL state_before = m_limesdr_tx;
+	m_limesdr_tx = false;
 	float_type gain = level / 47.0;
 	m_gain = gain;
 	LMS_SetNormalizedGain(device, LMS_CH_TX, 0, gain);
-	LMS_Calibrate(device, LMS_CH_TX, 0, m_sr * m_oversample, 0);
+	LMS_Calibrate(device, LMS_CH_TX, 0, m_Bandwidth, 0);
+	m_limesdr_tx = state_before; 
 }
 
 int limesdr_set_sr(double sr,int OverSample) {
@@ -131,26 +149,49 @@ int limesdr_set_sr(double sr,int OverSample) {
 
 	if (m_running == false) return 0;
 		float_type freq = 0;
-		m_sr = sr;
-		m_oversample = OverSample;
 		lms_range_t Range;
 		LMS_GetSampleRateRange(device, LMS_CH_TX, &Range);
+		
+		if (sr < Range.min)
+			m_oversample = 1;
+		else
+			m_oversample = 0;
+		
+		m_sr = sr*(1 << m_oversample);
+		
+		
+		
 		if ((m_sr < Range.min) || (m_sr > Range.max))
 		{
 			char sDebug[255];
 			sprintf_s(sDebug, "Valid SR=%f-%f by %f step", Range.min, Range.max, Range.step);
 			AfxMessageBox(sDebug);
 		}
+		
+		
+
+		int step_over;
+		for (step_over = 32; step_over >= 1; step_over = step_over / 2)
+		{
+			if ((step_over*m_sr) < 60e6) break;
+		}
+		OVERSAMPLE = step_over;
+		TRACE("Oversample=%d\n", OVERSAMPLE);
 		/*
 		if (m_sr <= 400000)	OVERSAMPLE = 32;
 		if((m_sr>400000)&&(m_sr<=800000)) 	OVERSAMPLE = 16;
-		if((m_sr>800000)&&(m_sr<=2000000)) OVERSAMPLE = 4;
+		if((m_sr>800000)&&(m_sr<=1600000)) OVERSAMPLE = 8;
+		if ((m_sr>1600000) && (m_sr <= 3200000)) OVERSAMPLE = 4;
+		if ((m_sr>3200000) && (m_sr <= 6400000)) OVERSAMPLE = 2;
+		if ((m_sr>6400000) ) OVERSAMPLE = 1;
 		*/
-		if (LMS_SetSampleRate(device, m_sr, OverSample) != 0)
+
+		if (LMS_SetSampleRate(device, m_sr, OVERSAMPLE) != 0)
 		{
 			AfxMessageBox("SR Not Set");
 		}
-		
+		m_Bandwidth = (m_sr * 1.4 < 2000000) ? 2000000 : m_sr * 1.4;
+		LMS_SetLPFBW(device, LMS_CH_TX, 0, m_Bandwidth);
 		/*
 		float_type HostSR, DacSR;
 		LMS_GetSampleRate(device, LMS_CH_TX, 0, &HostSR, &DacSR);
@@ -172,7 +213,7 @@ void limesdr_tx_rrc_filter(float rolloff)
 {
 	if (m_running == false) return;
 	int ntaps = 119;
-	float *fir = rrc_make_f_filter(rolloff, 1, ntaps);
+	float *fir = rrc_make_f_filter(rolloff, (1<<m_oversample), ntaps);
 	float_type *LimeFir = (float_type*) malloc(ntaps * sizeof(float_type));
 	for (int i = 0; i < ntaps; i++)
 	{
@@ -192,13 +233,17 @@ void limesdr_transmit(void) {
 		LMS_EnableChannel(device, LMS_CH_TX, 0, true);
 		LMS_StartStream(&streamId);
 		LMS_SetGFIR(device, LMS_CH_TX, 0, LMS_GFIR3, true); // When Channel is disable, GFIR enable is lost !!!!!! this is a workaround
+
+
+
 		//LMS7_ISINC_BYP_TXTSP
 		//Disable ISINC
 		uint16_t Reg;
 		LMS_ReadLMSReg(device, 0x208, &Reg);
 		Reg = Reg | (1 << 7);
 		LMS_WriteLMSReg(device, 0x0208, Reg);
-		LMS_Calibrate(device, LMS_CH_TX, 0, m_sr * m_oversample, 0);
+		LMS_Calibrate(device, LMS_CH_TX, 0, m_Bandwidth, 0);
+		m_limesdr_tx = true;
 
 
 	
@@ -208,7 +253,7 @@ void limesdr_receive(void)
 {
 	
 		if (m_running == false) return;
-		m_limesdr_tx = FALSE;
+		m_limesdr_tx = false;
 		LMS_StopStream(&streamId);
 		LMS_EnableChannel(device, LMS_CH_TX, 0, false);
 		
