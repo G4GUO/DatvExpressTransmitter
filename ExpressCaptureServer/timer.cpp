@@ -6,6 +6,7 @@
 #define TMR_30_MS    (int64_t)(0.03*27000000)
 #define TMR_50_MS    (int64_t)(0.05*27000000)
 #define TMR_100_MS   (int64_t)(0.10*27000000)
+#define TMR_500_MS   (int64_t)(0.50*27000000)
 #define TMR_1000_MS  (int64_t)(1*27000000)
 #define TMR_2000_MS  (int64_t)(2*27000000)
 #define TMR_9000_MS  (int64_t)(9*27000000)
@@ -38,7 +39,7 @@ void timer_tick( void )
     {
         g_pat_flag = true;
         g_pmt_flag = true;
-        g_100ms_clock_ticks = TMR_100_MS;
+        g_100ms_clock_ticks = TMR_500_MS;
     }
 
     g_1s_clock_ticks-= get_tp_tick();

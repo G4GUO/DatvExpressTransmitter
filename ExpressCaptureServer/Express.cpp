@@ -15,7 +15,7 @@ static unsigned int  m_xfrs_in_progress;
 static int           m_status;
 static int           m_initialised;
 static unsigned char m_ancillary;
-static int           m_express_status;
+       int           m_express_status;
 static bool          m_si570_fitted;
 static int           m_tx_hardware;
 static int           m_sample_block_size;
@@ -25,8 +25,12 @@ BOOL m_status_tx;
 //
 // Amount of buffering for the bulk transfer
 //
-#define NR_XFER_BUFFS 40
-typedef enum{BTYPE_TS,BTYPE_16_BIT_SAMPLE,BTYPE_8_BIT_SAMPLE};
+#define NR_XFER_BUFFS 200
+
+#define NR_SBLOCKS   200
+#define SIZE_SBLOCKS 50000
+
+enum{BTYPE_TS,BTYPE_16_BIT_SAMPLE,BTYPE_8_BIT_SAMPLE};
 
 typedef struct{
 	void *context;
@@ -54,7 +58,7 @@ void usb_context_init( void )
 //
 // Get a context for the new buffer
 //
-void *usb_context_get( void *b, int type )
+void *usb_context_get( void *b, int type,int NbBuffer )
 {
 	void *ctx;
 	// Get a new context, this will overwrite old contexts
@@ -63,7 +67,7 @@ void *usb_context_get( void *b, int type )
     m_context[m_index].inuse = 1;
 	m_context[m_index].type = type;
 	// Point to the oldest context 
-	m_index = (m_index + 1)%NR_XFER_BUFFS;
+	m_index = (m_index + 1)% NbBuffer;
     return ctx;
 }
 //
@@ -76,7 +80,11 @@ void usb_context_release( void )
 	{
 		// Yes it is, release it if done
 	    if(m_context[m_index].type == BTYPE_TS ) rel_tx_buff((UCHAR*)m_context[m_index].buffer);
-        usb_reap_async_nocancel( m_context[m_index].context, USB_TIMEOUT );
+        int Result=usb_reap_async_nocancel( m_context[m_index].context, USB_TIMEOUT );
+		if(Result<0)
+		{
+			TRACE("USB timeout %d\n", GetTickCount());
+		}
         // Place context back in pool
 		m_context[m_index].inuse = 0;
 	}
@@ -118,19 +126,24 @@ int ep1_block_write( UCHAR *b, int len )
 //
 void ep2_send_ts_buffer( unsigned char *b, int len )
 {
-	void *ctx = usb_context_get(b,BTYPE_TS);
+	void *ctx = usb_context_get(b,BTYPE_TS, NR_SBLOCKS);
 	usb_submit_async( ctx, (char *)b, len );
 	usb_context_release();
 }
-void ep2_send_s16_buffer(unsigned char *b, int len)
+void ep2_send_s16_buffer(unsigned char *b, int len,int NbBuffer)
 {
-	void *ctx = usb_context_get(b,BTYPE_16_BIT_SAMPLE);
-	usb_submit_async(ctx, (char *)b, len);
+	void *ctx = usb_context_get(b, BTYPE_16_BIT_SAMPLE,NbBuffer);
+	int Result= usb_submit_async(ctx, (char *)b, len);
+	if(Result!=0)
+	{
+		TRACE("USB error %d", GetTickCount());
+	}
+	
 	usb_context_release();
 }
 void ep2_send_s8_buffer(unsigned char *b, int len)
 {
-	void *ctx = usb_context_get(b, BTYPE_8_BIT_SAMPLE);
+	void *ctx = usb_context_get(b, BTYPE_8_BIT_SAMPLE, NR_SBLOCKS);
 	usb_submit_async(ctx, (char *)b, len);
 	usb_context_release();
 }
@@ -1197,21 +1210,27 @@ void express_release_transfer_buffers(void)
 // Send each symbol is 2 x 16 bits
 //
 
-#define NR_SBLOCKS   200
-#define SIZE_SBLOCKS 50000
+
 
 static scmplx txb[NR_SBLOCKS][SIZE_SBLOCKS];
 static int txi;
 
 int express_write_16_bit_samples( scmplx *s, int len )
 {
+	int NbBuffer = NR_SBLOCKS;
+	if (len > 100)
+	{
+		NbBuffer = NR_SBLOCKS * 900 / len;
+		if (NbBuffer < 10) NbBuffer = 10;
+		if (NbBuffer > NR_SBLOCKS) NbBuffer = NR_SBLOCKS;
+	}
     for( int i = 0; i < len; i++ )
 	{
        txb[txi][i].re = s[i].re | 0x0001;// Mark I channel, LSB is always '1'
        txb[txi][i].im = s[i].im & 0xFFFE;// Mark Q channel, LSB is always '0'
     }
-	ep2_send_s16_buffer((unsigned char *)txb[txi], len*sizeof(scmplx));
-	txi = (txi + 1) % NR_SBLOCKS;
+	ep2_send_s16_buffer((unsigned char *)txb[txi], len*sizeof(scmplx),NbBuffer);
+	txi = (txi + 1) % NbBuffer;
 
 	return 0;
 }
@@ -1286,7 +1305,8 @@ int express_write_samples( scmplx *s, int len )
 void express_write_transport_stream( UCHAR *tp, INT len )
 {
     if( m_express_status != EXP_OK ) return;
-	if( tp == NULL ) return;
+	if( tp == NULL )
+		return;
      //usb_bulk_write(m_handle,EP2OUT,(char*)tp,len,USB_TIMEOUT);
 	 ep2_send_ts_buffer( tp, len );
 }
@@ -1352,7 +1372,7 @@ int express_init( FILE *fx2, FILE *fpga )
     // Find the board
     if(( m_express_status = express_find())<0)
     {
-		report_error(ERROR_EXPRESS_NOT_FOUND);
+		report_error(ERROR_SDR_NOT_FOUND);
 		express_error("Express Hardware not found");
 		m_status_s = "HW fail";
 		m_status_tx = FALSE;

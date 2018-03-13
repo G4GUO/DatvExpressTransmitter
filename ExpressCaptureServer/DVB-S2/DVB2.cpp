@@ -257,6 +257,11 @@ int DVB2::next_ts_frame_base( u8 *ts )
     // return whether it is time to transmit a new frame
     return res;
 }
+void DVB2::reset(void) {
+	m_dnp = 0;// No delted null packets
+	m_frame_offset_bits = 0;
+	m_params_changed = 1;
+}
 DVB2::DVB2(void)
 {
     // Clear the transport queue

@@ -22,7 +22,7 @@
 
 static uint8_t conv_tab[CONV_STATES];
 static int encode_state;
-static int code_rate;
+static int m_code_rate;
 // Storage
 static uint8_t mb[10];
 static int   mbc;
@@ -73,7 +73,10 @@ void dvb_conv_init( void )
         conv_tab[i] = dvb_conv_parity( i );
     }
     dvb_conv_ctl();
-	code_rate = get_dvbt_fec();
+	if(get_txmode() == M_DVBT)
+		m_code_rate = get_dvbt_fec();
+	else
+		m_code_rate = get_dvbs_fec();
 
 }
 inline uint8_t dvb_conv_encode_bit( uint8_t in )
@@ -96,13 +99,13 @@ int dvb_puncture( uint8_t *in, int len )
     // Output length
     int odx = 0;
 
-    if( code_rate == CR_12 )
+    if( m_code_rate == FEC_12 )
     {
         // Nothing to do
         return len;
     }
 
-    if( code_rate == CR_23 )
+    if( m_code_rate == FEC_23 )
     {
         for( i = 0; i < len; i++ )
         {
@@ -117,7 +120,7 @@ int dvb_puncture( uint8_t *in, int len )
         }
     }
 
-    if( code_rate == CR_34 )
+    if( m_code_rate == FEC_34 )
     {
         for( i = 0; i < len; i++ )
         {
@@ -131,7 +134,7 @@ int dvb_puncture( uint8_t *in, int len )
         }
     }
 
-    if( code_rate == CR_56 )
+    if( m_code_rate == FEC_56 )
     {
         for( i = 0; i < len; i++ )
         {
@@ -146,7 +149,7 @@ int dvb_puncture( uint8_t *in, int len )
         }
     }
 
-    if( code_rate == CR_78 )
+    if( m_code_rate == FEC_78 )
     {
         for( i = 0; i < len; i++ )
         {

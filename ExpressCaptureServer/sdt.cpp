@@ -96,10 +96,10 @@ void sdt_fmt( int stream_id, int network_id, int service_id, char *service_provi
     sds.section[0].descriptor[0].sd.type  = SVC_DIGITAL_TV;
 
     memcpy( sds.section[0].descriptor[0].sd.provider, service_provider_name, strlen(service_provider_name));
-    sds.section[0].descriptor[0].sd.provider_length = strlen(service_provider_name);
+    sds.section[0].descriptor[0].sd.provider_length = (uint8_t)strlen(service_provider_name);
 
     memcpy( sds.section[0].descriptor[0].sd.name, service_name, strlen(service_name));
-    sds.section[0].descriptor[0].sd.name_length = strlen(service_name);
+    sds.section[0].descriptor[0].sd.name_length = (uint8_t)strlen(service_name);
 
     len += f_sdt( &sdt_pkt[len], &sds );
     // PAD out the unused bytes

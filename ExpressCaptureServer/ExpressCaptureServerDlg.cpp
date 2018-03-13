@@ -21,6 +21,9 @@
 #include "DialogNoiseTool.h"
 #include "Dvb.h"
 #include "DVB-T\dvb_t.h"
+#include "hardware.h"
+#include <WinSock.h>
+#pragma warning(disable : 4996)
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -65,6 +68,11 @@ END_MESSAGE_MAP()
 
 CExpressCaptureServerDlg::CExpressCaptureServerDlg(CWnd* pParent /*=NULL*/)
 	: CDialogEx(CExpressCaptureServerDlg::IDD, pParent)
+	
+	, m_TsinPort(0)
+	, m_TsInMode(FALSE)
+	, m_TsInAddress(0)
+	, m_sLocalNic(_T(""))
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 }
@@ -91,6 +99,13 @@ void CExpressCaptureServerDlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_STATIC_TX_MODE, m_tx_mode);
 	DDX_Control(pDX, IDC_STATIC_TX_CONSTELLATION, m_tx_constellation);
 	DDX_Control(pDX, IDC_SLIDER_TX_LEVEL, m_tx_level_slider);
+	DDX_Control(pDX, IDC_IPADDRESS_TSIN, m_IpTsin);
+
+	DDX_Text(pDX, IDC_IPTSINPORT, m_TsinPort);
+	DDX_Check(pDX, IDC_TSINMODE, m_TsInMode);
+	DDX_IPAddress(pDX, IDC_IPADDRESS_TSIN, m_TsInAddress);
+	DDX_Control(pDX, IDC_COMBO1, m_ListNic);
+	DDX_CBString(pDX, IDC_COMBO1, m_sLocalNic);
 }
 
 BEGIN_MESSAGE_MAP(CExpressCaptureServerDlg, CDialogEx)
@@ -124,6 +139,9 @@ ON_COMMAND(ID_MODULATOR_DVB_T, &CExpressCaptureServerDlg::OnModulatorDvbT)
 ON_COMMAND(ID_OPTIONS_IQCALIBRATION, &CExpressCaptureServerDlg::OnOptionsIqcalibration)
 ON_COMMAND(ID_OPTIONS_NOISETOOL, &CExpressCaptureServerDlg::OnOptionsNoisetool)
 ON_WM_MENUSELECT()
+ON_BN_CLICKED(IDC_TSINMODE, &CExpressCaptureServerDlg::OnBnClickedTsinmode)
+ON_NOTIFY(IPN_FIELDCHANGED, IDC_IPADDRESS_TSIN, &CExpressCaptureServerDlg::OnIpnFieldchangedIpaddressTsin)
+ON_CBN_SELCHANGE(IDC_COMBO1, &CExpressCaptureServerDlg::OnCbnSelchangeCombo1)
 END_MESSAGE_MAP()
 
 
@@ -172,7 +190,7 @@ BOOL CExpressCaptureServerDlg::OnInitDialog()
 	}
 
 	if (m_fully_configured == TRUE) {
-		SetTimer(1, 100, NULL);
+		SetTimer(1, 200, NULL);
 	}
 	m_display_refresh = TRUE;
 	m_last_txq = -1;
@@ -186,6 +204,41 @@ BOOL CExpressCaptureServerDlg::OnInitDialog()
 	DisplayConfigFilename();
 	m_tx_level_slider.SetRange(0, 47);
 	m_tx_level_slider.SetPos(47-get_current_tx_level());
+	m_carrier.SetCheck(FALSE);
+	//m_IpTsin.SetAddress(get_TSIn_ip_addr());
+	m_TsInAddress = get_TSIn_ip_addr();
+	m_TsinPort = get_TSIn_port();
+	UpdateData(false);
+
+	// List NIC
+	{
+		WORD wVersionRequested;
+		WSADATA wsaData;
+		char name[255];
+		PHOSTENT hostinfo;
+		wVersionRequested = MAKEWORD(1, 1);
+		char *ip;
+
+		if (WSAStartup(wVersionRequested, &wsaData) == 0)
+			if (gethostname(name, sizeof(name)) == 0)
+			{
+				printf("Host name: %s\n", name);
+
+				if ((hostinfo = gethostbyname(name)) != NULL)
+				{
+					int nCount = 0;
+					while (hostinfo->h_addr_list[nCount])
+					{
+						ip = inet_ntoa(*(
+							struct in_addr *)hostinfo->h_addr_list[nCount]);
+						m_ListNic.AddString(ip);
+						printf("IP #%d: %s\n", ++nCount, ip);
+					}
+				}
+			}
+		m_ListNic.SetCurSel(0);
+		UpdateData(true);
+	}
 
 	return TRUE;  // return TRUE  unless you set the focus to a control
 }
@@ -256,38 +309,45 @@ void CExpressCaptureServerDlg::display_fixed_params(void) {
 			break;
 		case M_DVBS2:
 			text.Format("Tx Mode\t DVB-S2");
+			if (get_dvbs2_rolloff() == RO_20) text += " 0.20";
+			if (get_dvbs2_rolloff() == RO_25) text += " 0.25";
+			if (get_dvbs2_rolloff() == RO_35) text += " 0.35";
+			if (get_dvbs2_pilots()) text += " Pilots";
 			break;
 		}
 		m_tx_mode.SetWindowTextA(text);
+
+		text.Format("Tx Constellation\t");
+
 		if (get_txmode() == M_DVBS2) {
 			switch (get_dvbs2_constellation()) {
 			case QPSK:
-				text.Format("Tx Constellation\t QPSK");
+				text += " QPSK";
 				break;
 			case PSK8:
-				text.Format("Tx Constellation\t 8PSK");
+				text += " 8PSK";
 				break;
 			case APSK16:
-				text.Format("Tx Constellation\t 16APSK");
+				text += " 16APSK";
 				break;
 			case APSK32:
-				text.Format("Tx Constellation\t 32APSK");
+				text += " 32APSK";
 				break;
 			}
 		}
 		
-		if(get_txmode() == M_DVBS )	text.Format("Tx Constellation\t QPSK");
+		if(get_txmode() == M_DVBS )	text += " QPSK";
 		
 		if (get_txmode() == M_DVBT) {
 			switch (get_dvbt_constellation()) {
 			case CO_QPSK:
-				text.Format("Tx Constellation\t QPSK");
+				text += " QPSK";
 				break;
 			case CO_16QAM:
-				text.Format("Tx Constellation\t 16QAM");
+				text += " 16QAM";
 				break;
 			case CO_64QAM:
-				text.Format("Tx Constellation\t 64QAM");
+				text += " 64QAM";
 				break;
 			}
 		}
@@ -348,7 +408,7 @@ void CExpressCaptureServerDlg::display_fixed_params(void) {
 		m_tx_fec.SetWindowTextA(text);
 
 		//
-		param = get_tx_bitrate();
+		param = get_tx_net_bitrate();
 		if (param >= 1000000) {
 			param = param / 1000000;
 			text.Format("Tx Bitrate\t %.3f MBps", param);
@@ -407,6 +467,8 @@ void CExpressCaptureServerDlg::display_fixed_params(void) {
 		m_audio_bitrate.SetWindowTextA(text);
 		m_display_refresh = FALSE;
 	}
+	//m_sdr_ip.SetAddress
+	
 }
 
 void CExpressCaptureServerDlg::display_adjustable_params(void) {
@@ -427,7 +489,7 @@ void CExpressCaptureServerDlg::display_adjustable_params(void) {
 		m_tx_level.SetPos(val);
 		m_last_tx_level = val;
 	}
-	double param = get_current_tx_frequency();
+	double param = (double)get_current_tx_frequency();
 	if (param != m_last_tx_freq) {
 		if (param >= 1000000000) {
 			param = param / 1000000000;
@@ -440,7 +502,7 @@ void CExpressCaptureServerDlg::display_adjustable_params(void) {
 		m_tx_freq.SetWindowTextA(text);
 		m_last_tx_freq = param;
 	}
-
+	
 }
 
 
@@ -476,6 +538,9 @@ void CExpressCaptureServerDlg::OnFileOpen()
 		LoadConfigFromDisk(theApp.m_sConfigFile);
 		if(m_fully_configured == TRUE)	OnFileRestart();
 		DisplayConfigFilename();
+		m_IpTsin.SetAddress(get_TSIn_ip_addr());
+
+		m_TsinPort = (int)get_TSIn_port();
 	}
 }
 
@@ -499,14 +564,34 @@ void CExpressCaptureServerDlg::OnFileSaveAs()
 
 void CExpressCaptureServerDlg::OnClickedButtonPtt()
 {
-	// TODO: Add your control notification handler code here
-	if(get_tx_status() == TRUE){
-		cmd_standby();
-		m_ptt_status.SetWindowTextA("STANDBY");
-	}else{
-		cmd_transmit();
-		m_ptt_status.SetWindowTextA("TRANSMIT");
+	UpdateData(true);
+	cmd_set_tx_level(47 - m_tx_level_slider.GetPos());
+	DWORD IPLocal=inet_addr(m_sLocalNic);
+	
+	cmd_set_TsIn_ip_addr(m_TsInAddress, m_TsinPort, IPLocal);
+	if (!m_TsInMode)
+	{
+		if (get_tx_status() == TRUE) {
+			cmd_standby();
+			m_ptt_status.SetWindowTextA("STANDBY");
+		}
+		else {
+			cmd_transmit();
+			m_ptt_status.SetWindowTextA("TRANSMIT");
+		}
 	}
+	else
+	{
+		if (get_tx_status() == TRUE) {
+			cmd_ip_standby();
+			m_ptt_status.SetWindowTextA("STANDBY");
+		}
+		else {
+			cmd_ip_transmit(m_TsInAddress,m_TsinPort);
+			m_ptt_status.SetWindowTextA("TRANSMIT");
+		}
+	}
+
 }
 
 void CExpressCaptureServerDlg::OnHelpAbout()
@@ -590,7 +675,7 @@ void CExpressCaptureServerDlg::OnFileRestart()
 	m_ptt_status.SetWindowTextA("STANDBY");
 	system_stop();
 	tx_buf_empty();
-	express_deinit();
+	hw_deinit();
 
 	if (system_restart() == S_OK) {
 		m_fully_configured = TRUE;
@@ -659,6 +744,7 @@ void CExpressCaptureServerDlg::RestartRequired(BOOL restart) {
 		// We must restart the program, probably as the mode has changed
 		OnFileSave();
 		OnFileRestart();
+		m_carrier.SetCheck(FALSE);
 		m_ptt_status.SetWindowTextA("STANDBY");
 	}
 	else {
@@ -694,7 +780,7 @@ void CExpressCaptureServerDlg::OnReleasedcaptureSliderTxLevel(NMHDR *pNMHDR, LRE
 {
 	// TODO: Add your control notification handler code here
 	cmd_set_tx_level(47 - m_tx_level_slider.GetPos());
-	display_adjustable_params();
+	//display_adjustable_params();
 
 	*pResult = 0;
 }
@@ -703,7 +789,7 @@ void CExpressCaptureServerDlg::OnCustomdrawSliderTxLevel(NMHDR *pNMHDR, LRESULT 
 {
 	LPNMCUSTOMDRAW pNMCD = reinterpret_cast<LPNMCUSTOMDRAW>(pNMHDR);
 	// TODO: Add your control notification handler code here
-	cmd_set_tx_level(47 - m_tx_level_slider.GetPos());
+	//cmd_set_tx_level(47 - m_tx_level_slider.GetPos());
 	display_adjustable_params();
 	*pResult = 0;
 }
@@ -751,4 +837,26 @@ void CExpressCaptureServerDlg::OnMenuSelect(UINT nItemID, UINT nFlags, HMENU hSy
 		submenu->EnableMenuItem(ID_MODULATOR_DVB_T, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
 		break;
 	}
+}
+
+
+
+void CExpressCaptureServerDlg::OnBnClickedTsinmode()
+{
+	
+}
+
+
+void CExpressCaptureServerDlg::OnIpnFieldchangedIpaddressTsin(NMHDR *pNMHDR, LRESULT *pResult)
+{
+	LPNMIPADDRESS pIPAddr = reinterpret_cast<LPNMIPADDRESS>(pNMHDR);
+	// TODO: ajoutez ici le code de votre gestionnaire de notification de contrôle
+	
+	*pResult = 0;
+}
+
+
+void CExpressCaptureServerDlg::OnCbnSelchangeCombo1()
+{
+	// TODO: ajoutez ici le code de votre gestionnaire de notification de contrôle
 }

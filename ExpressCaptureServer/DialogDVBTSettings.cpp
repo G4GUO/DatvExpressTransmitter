@@ -93,19 +93,19 @@ BOOL CDialogDVBTSettings::OnInitDialog()
 	}
 	switch (get_dvbt_fec())
 	{
-	case CR_12:
+	case FEC_12:
 		CheckRadioButton(IDC_RADIO_DVBT_FEC12, IDC_RADIO_DVBT_FEC78, IDC_RADIO_DVBT_FEC12);
 		break;
-	case CR_23:
+	case FEC_23:
 		CheckRadioButton(IDC_RADIO_DVBT_FEC12, IDC_RADIO_DVBT_FEC78, IDC_RADIO_DVBT_FEC23);
 		break;
-	case CR_34:
+	case FEC_34:
 		CheckRadioButton(IDC_RADIO_DVBT_FEC12, IDC_RADIO_DVBT_FEC78, IDC_RADIO_DVBT_FEC34);
 		break;
-	case CR_56:
+	case FEC_56:
 		CheckRadioButton(IDC_RADIO_DVBT_FEC12, IDC_RADIO_DVBT_FEC78, IDC_RADIO_DVBT_FEC56);
 		break;
-	case CR_78:
+	case FEC_78:
 		CheckRadioButton(IDC_RADIO_DVBT_FEC12, IDC_RADIO_DVBT_FEC78, IDC_RADIO_DVBT_FEC78);
 		break;
 	}

@@ -3,6 +3,7 @@
 #include "Codecs.h"
 #include "Dvb.h"
 
+#pragma warning(disable : 4996)
 
 #define ENVC 0
 #define ENAC 1
@@ -10,8 +11,8 @@
 
 #define INBUF_SIZE 100000
 // 140 ms
-#define SOUND_DELAY 27000*30
-#define VIDEO_DELAY 27000*140
+#define SOUND_DELAY (27000*400L)
+#define VIDEO_DELAY (27000*400L)
 
 // Local variables
 static struct SwsContext *m_sws;
@@ -86,6 +87,9 @@ int video_mjpeg_decode(SampleBuffer *vb, AVFrame *frame){
 	avcodec_decode_video2( m_pC[DEVC], frame, &got_picture, &m_avpkt[DEVC]);
 	return !got_picture;
 }
+
+int64_t last_pts_time;
+
 void video_codec_samples( uint8_t *s, long len, uint64_t time){
 	if( g_codec_configured == TRUE ){
 		// If the memory is not copied it crashes
@@ -130,13 +134,25 @@ void video_codec_samples( uint8_t *s, long len, uint64_t time){
 			{
 				if (m_avpkt[ENVC].dts > 0) {
 					// DTS increments by one at a time
-					int64_t dts = time;
+					int64_t pts = (m_avpkt[ENVC].pts)*(m_pC[ENVC]->time_base.num * 1000 * 27000 / m_pC[ENVC]->time_base.den);
+					int64_t dts = (m_avpkt[ENVC].dts)*(m_pC[ENVC]->time_base.num * 1000 * 27000 / m_pC[ENVC]->time_base.den);
+					int64_t pcractual = get_pcr_clock();
+					int64_t diff_pcr_dts = abs(dts - pcractual);
+					if(diff_pcr_dts>(27000*1000L))
+					{
+						set_pcr_clock(dts);
+						
+					}
+					
+					/*int64_t dts = time;
 					int64_t unit = dts / m_avpkt[ENVC].dts;
 					int64_t pts = m_avpkt[ENVC].pts*unit;
-
+					*/
 					pts = (pts + VIDEO_DELAY);
 					dts = (dts + VIDEO_DELAY);
-					//if (pts < dts) pts = dts;
+					if (pts < dts)
+							pts = dts;
+					last_pts_time = pts; // To copy to audio
 					EnterCriticalSection(&g_mutex);
 					ps_video_el_to_ps(m_avpkt[ENVC].data, m_avpkt[ENVC].size, g_video_bitrate, pts, dts);
 					// Now encode into transport packets
@@ -149,34 +165,50 @@ void video_codec_samples( uint8_t *s, long len, uint64_t time){
 }
 
 void process_audio_codec_samples(uint8_t *s, long len, uint64_t time) {
-	static int64_t last_pts_time;
+	
 
 	if (get_audio_status() == TRUE) {
 		int got_packet;
-
-		avcodec_fill_audio_frame(m_pFrameAudio, m_audio_channels, AV_SAMPLE_FMT_S16, s, len, 0);
-		m_avpkt[ENAC].size = INBUF_SIZE;
-		m_avpkt[ENAC].data = m_p_eb[ENAC];
+		if (m_pC[ENAC]->codec_id == AV_CODEC_ID_AAC)
+		{
+			static float *BufferFLT = NULL;
+			if (BufferFLT == NULL) BufferFLT=(float*) malloc(len * sizeof(float));
+			for (int i = 0; i < len; i++)
+			{
+				BufferFLT[i] = s[i] / 32767.0;
+			}
+			int res=avcodec_fill_audio_frame(m_pFrameAudio, m_audio_channels, AV_SAMPLE_FMT_FLTP,(uint8_t*) BufferFLT, len*sizeof(float), 0);
+			m_avpkt[ENAC].size = INBUF_SIZE;
+			m_avpkt[ENAC].data = m_p_eb[ENAC];
+		}
+		else
+		{
+			avcodec_fill_audio_frame(m_pFrameAudio, m_audio_channels, AV_SAMPLE_FMT_S16, s, len, 0);
+			m_avpkt[ENAC].size = INBUF_SIZE;
+			m_avpkt[ENAC].data = m_p_eb[ENAC];
+		}
 		inc_audio_pts();
 
 		if (avcodec_encode_audio2(m_pC[ENAC], &m_avpkt[ENAC], m_pFrameAudio, &got_packet) == 0)
 		{
 			if (got_packet)
 			{
-				/*	int64_t pts = get_audio_pts()*m_audio_timestamp_delta;
-					int64_t pcr = get_pcr_clock();
-					if(pts < pcr){
-						set_audio_pts((pcr+CLOCK_DELAY)/m_audio_timestamp_delta);
-					}else{
-						if(abs(pts - pcr) > (CLOCK_DELAY*3)){
-							set_audio_pts((pcr+CLOCK_DELAY)/m_audio_timestamp_delta);
-						}
-					}*/
-				int64_t pts_time = time/(27000 * 24);
+				
+				int64_t dts = (m_avpkt[ENAC].dts)*(m_pC[ENAC]->time_base.num * 1000 * 27000 / m_pC[ENAC]->time_base.den);
+				//int64_t pcractual = get_pcr_clock();
+				//int64_t diff_pcr_dts = abs(dts - pcractual);
+				/*
+				if (diff_pcr_dts>(27000 * 1000L))
+				{
+					set_pcr_clock(dts);
+
+				}*/
+				/*int64_t pts_time = time/(27000 * 24);
 				pts_time *= (27000 * 24);
 				if (pts_time <= last_pts_time) pts_time += (27000 * 24);
 				last_pts_time = pts_time;
-				pts_time = (pts_time + SOUND_DELAY);
+				*/
+				int64_t pts_time = last_pts_time;// (get_pcr_clock() + SOUND_DELAY);
 				EnterCriticalSection(&g_mutex);
 				ps_audio_el_to_ps(m_avpkt[ENAC].data, m_avpkt[ENAC].size, g_audio_bitrate, pts_time, -1);
 				ps_to_ts_audio();
@@ -334,6 +366,10 @@ int init_codecs(CodecParams *params ){
 	// Allocate the Encoding Codecs
 	//
 	if(params->v_codec == AV_CODEC_ID_MPEG2VIDEO){
+//		if (params->v_br < 600000) {
+//			cmd_set_error_text("MPEG2 Bitrate is too low");
+//			return -1;
+//		}
         codec = avcodec_find_encoder(AV_CODEC_ID_MPEG2VIDEO);
         if(codec != NULL){
             m_pC[ENVC]                     = avcodec_alloc_context3(codec);
@@ -355,10 +391,10 @@ int init_codecs(CodecParams *params ){
 			m_pC[ENVC]->time_base.num      = 1;
 			m_pC[ENVC]->time_base.den      = params->v_dst_fps;
 			m_pC[ENVC]->ticks_per_frame = params->v_dst_fpf == 2 ? 1 : 2;// MPEG2 & 4 (should be 2)
-            m_pC[ENVC]->profile            = FF_PROFILE_MPEG2_MAIN;
+			m_pC[ENVC]->profile            = FF_PROFILE_MPEG2_MAIN;
             m_pC[ENVC]->thread_count       = 1;
 		}else{
-            printf("MPEG2 Codec not found");
+			cmd_set_error_text("MPEG2 Codec not found");
             return -1;
         }
     }
@@ -367,10 +403,10 @@ int init_codecs(CodecParams *params ){
         if(codec != NULL){
             m_pC[ENVC]                     = avcodec_alloc_context3(codec);
             m_pC[ENVC]->bit_rate           = params->v_br;// Not used CBR
-			m_pC[ENVC]->bit_rate_tolerance = 0;//params->v_br / 10;// Not used CBR
+			m_pC[ENVC]->bit_rate_tolerance = params->v_br / 10;// Not used CBR
             m_pC[ENVC]->rc_max_rate        = params->v_br;
             m_pC[ENVC]->rc_min_rate        = params->v_br;
-            m_pC[ENVC]->rc_buffer_size     = params->v_br/3;
+            m_pC[ENVC]->rc_buffer_size     = params->v_br*4/ params->v_dst_fps;
             m_pC[ENVC]->width              = params->v_dst_width;
             m_pC[ENVC]->height             = params->v_dst_height;
 			m_pC[ENVC]->sample_aspect_ratio.num = params->v_ar[0];
@@ -389,7 +425,7 @@ int init_codecs(CodecParams *params ){
             av_opt_set(m_pC[ENVC]->priv_data, "preset", get_video_codec_performance(), 0);
 
         }else{
-            printf("MPEG4-AVC Codec not found");
+			cmd_set_error_text("MPEG4-AVC Codec not found");
             return -1;
       }
     }
@@ -399,7 +435,7 @@ int init_codecs(CodecParams *params ){
         if(codec != NULL){
             m_pC[ENVC]                     = avcodec_alloc_context3(codec);
             m_pC[ENVC]->bit_rate           = params->v_br;// Not used CBR
-			m_pC[ENVC]->bit_rate_tolerance = 0;//params->v_br / 10;// Not used CBR
+			m_pC[ENVC]->bit_rate_tolerance = params->v_br / 10;// Not used CBR
             m_pC[ENVC]->rc_max_rate        = params->v_br;
             m_pC[ENVC]->rc_min_rate        = params->v_br;
             m_pC[ENVC]->rc_buffer_size     = params->v_br/3;
@@ -419,12 +455,12 @@ int init_codecs(CodecParams *params ){
             m_pC[ENVC]->thread_count       = 4;
             av_opt_set(m_pC[ENVC]->priv_data, "preset", get_video_codec_performance(), 0);
         }else{
-            printf("HEVC Codec not found");
+			cmd_set_error_text("HEVC Codec not found");
             return -1;
         }
     }
     if(avcodec_open2(m_pC[ENVC], codec, NULL)<0){
-            printf("Unable to open Video SW Codec, bad params ?");
+		    cmd_set_error_text("Unable to open Video SW Codec, bad params ?");
             return -1;
     }
     //
@@ -465,35 +501,38 @@ int init_codecs(CodecParams *params ){
 		}
 		if(avcodec_open2(m_pC[ENAC], codec, NULL)<0 )
 		{
-			printf("Unable to open Audio codec");
+			cmd_set_error_text("Unable to open Audio codec");
 			return -1;
 		}
 	}
 	if(params->a_codec == AV_CODEC_ID_AAC ){
 		codec = avcodec_find_encoder(AV_CODEC_ID_AAC);
+		//codec = avcodec_find_encoder_by_name("libfdk_aac");
 		if( codec != NULL )
 		{
+			m_audio_channels = 2;
 			m_pC[ENAC] = avcodec_alloc_context3(codec);
-			m_pC[ENAC]->bit_rate            = params->a_br;
+			m_pC[ENAC]->bit_rate = 16000;// params->a_br;
 			m_pC[ENAC]->bit_rate_tolerance  = 0;
 			m_pC[ENAC]->bits_per_raw_sample = 16;
 			m_pC[ENAC]->sample_rate         = 48000;
-			m_pC[ENAC]->channels            = 2;
-			m_pC[ENAC]->sample_fmt          = codec->sample_fmts[0];//AV_SAMPLE_FMT_S16;
+			m_pC[ENAC]->channels            = m_audio_channels;
+			m_pC[ENAC]->sample_fmt          = AV_SAMPLE_FMT_FLTP;//codec->sample_fmts[0];//
 			m_pC[ENAC]->channel_layout      = AV_CH_LAYOUT_STEREO;
 			m_pC[ENAC]->thread_count        = 4;
-			m_pC[ENAC]->profile             = FF_PROFILE_AAC_MAIN;
+			m_pC[ENAC]->profile             = FF_PROFILE_AAC_HE;
+			
 			m_pC[ENAC]->time_base.num       = 1;
 			m_pC[ENAC]->time_base.den       = 48000;
-			m_pC[ENAC]->codec_type          = AVMEDIA_TYPE_AUDIO;
-			//m_pC[ENAC]->codec_id            = AV_CODEC_ID_AAC;
+			m_pC[ENAC]->codec_id          = AV_CODEC_ID_AAC;
+			//m_pC[ENAC]->flags            = AV_CODEC_ID_AAC;
 
 			m_pC[ENAC]->strict_std_compliance = FF_COMPLIANCE_EXPERIMENTAL;
 		}
 		int val;
         if((val=avcodec_open2(m_pC[ENAC], codec, NULL))<0 )
         {
-			printf("Unable to open Audio codec");
+			cmd_set_error_text("Unable to open Audio codec");
 			return -1;
 		}
 	};
@@ -517,7 +556,10 @@ void codec_start(CodecParams *params){
 	g_audio_bitrate = params->a_br;
 	g_video_bitrate = params->v_br;
 	overlay_init(get_provider_name());
-	if(init_codecs(params) >= 0) g_codec_configured = TRUE; 
+	if(init_codecs(params) >= 0) 
+		g_codec_configured = TRUE; 
+	else
+		g_codec_configured = FALSE;
 }
 
 void codec_stop(void){

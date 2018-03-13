@@ -1,5 +1,6 @@
 #pragma once
 #include "afxwin.h"
+#include "afxcmn.h"
 
 
 // CDialogExpressSettings dialog
@@ -35,4 +36,6 @@ private:
 	CButton m_ptt_port_d;
 public:
 	afx_msg void OnClickedButtonApply();
+private:
+	CIPAddressCtrl m_sdr_ip;
 };

@@ -1,11 +1,11 @@
 #include "stdafx.h"
 #include <stdint.h>
 #include "si.h"
-#include "express.h"
 #include "Codecs.h"
 #include "error_codes.h"
 #include "DVB-T\dvb_t.h"
 #include "noise.h"
+#include "hardware.h"
 
 static CString g_error_text;
 static CString g_config_filename;
@@ -27,9 +27,10 @@ static int  g_audio_codec;
 static BOOL g_audio_present;
 static char g_service_provider_name[40]; 
 static char g_service_name[40];
-static uint32_t g_tx_frequency;
+static uint64_t g_tx_frequency;
 static uint32_t g_tx_sr;
 static int  g_tx_level;
+static int  g_tx_carrier;
 
 static int g_dvbs_fec;
 static int g_dvbs2_fec;
@@ -61,6 +62,11 @@ static BOOL g_video_ident;
 static BOOL g_tx_status;
 static int g_i_dc_offset;
 static int g_q_dc_offset;
+static SdrHwType g_sdrhw_type;
+static DWORD g_sdr_ip_addr;
+static DWORD g_TsIn_ip_addr;
+static WORD g_TsIn_ip_port ;
+static DWORD g_TsIn_LocalNic;
 
 void load_defaults(void) {
 	g_config_filename = "datvexpress.cfg";
@@ -86,7 +92,7 @@ void load_defaults(void) {
 	g_tx_sr           = 4000000;
 	g_tx_level        = 20;
 	g_dvbs_fec        = FEC_23;
-	g_dvbt_fec        = CR_23;
+	g_dvbt_fec        = FEC_23;
 	g_dvbs2_fec       = FEC_23;
 	g_dvbs2_rolloff   = RO_35;
 	g_dvbs2_constellation = QPSK;
@@ -106,6 +112,8 @@ void load_defaults(void) {
 	g_video_ident = FALSE;
 	g_i_dc_offset = 0;
 	g_q_dc_offset = 0;
+	g_TsIn_ip_addr = 0;
+	g_TsIn_ip_port = 10000;
 }
 uint32_t get_video_pid(void){
 	return g_video_pid;
@@ -233,7 +241,33 @@ int get_i_dc_offset(void) {
 int get_q_dc_offset(void) {
 	return g_q_dc_offset;
 }
+SdrHwType get_sdrhw_type(void) {
+	return g_sdrhw_type;
+}
+DWORD get_sdr_ip_addr(void) {
+	return g_sdr_ip_addr;
+}
 
+DWORD get_TSIn_ip_addr(void) {
+	return g_TsIn_ip_addr;
+}
+
+WORD get_TSIn_port(void) {
+	return g_TsIn_ip_port;
+}
+
+DWORD get_TSIn_LocalNic(void) {
+	return g_TsIn_LocalNic;
+}
+
+const char *get_sdr_ip_addrs(void) {
+	static char text[20];
+	sprintf_s(text, 20, "%d.%d.%d.%d", (g_sdr_ip_addr >> 24), (g_sdr_ip_addr >> 16) & 0xFF, (g_sdr_ip_addr >> 8) & 0xFF, g_sdr_ip_addr & 0xFF);
+	return text;
+}
+int get_tx_carrier(void) {
+	return g_tx_carrier;
+}
 // Configure the SI tables
 void configure_si(void){
 	eit_fmt( g_service_id, g_stream_id, g_network_id, g_event_duration, g_event_title, g_event_text );
@@ -302,12 +336,12 @@ void cmd_set_dvbs_fec(const char *fec){
 }
 
 void cmd_set_dvbt_fec(const char *fec) {
-	g_dvbt_fec = CR_12;
-	if (strncmp(fec, "1/2", 3) == 0) g_dvbt_fec = CR_12;
-	if (strncmp(fec, "2/3", 3) == 0) g_dvbt_fec = CR_23;
-	if (strncmp(fec, "3/4", 3) == 0) g_dvbt_fec = CR_34;
-	if (strncmp(fec, "5/6", 3) == 0) g_dvbt_fec = CR_56;
-	if (strncmp(fec, "7/8", 3) == 0) g_dvbt_fec = CR_78;
+	g_dvbt_fec = FEC_12;
+	if (strncmp(fec, "1/2", 3) == 0) g_dvbt_fec = FEC_12;
+	if (strncmp(fec, "2/3", 3) == 0) g_dvbt_fec = FEC_23;
+	if (strncmp(fec, "3/4", 3) == 0) g_dvbt_fec = FEC_34;
+	if (strncmp(fec, "5/6", 3) == 0) g_dvbt_fec = FEC_56;
+	if (strncmp(fec, "7/8", 3) == 0) g_dvbt_fec = FEC_78;
 }
 void cmd_set_dvbt_constellation(const char *con) {
 	g_dvbt_constellation = CO_QPSK;
@@ -372,24 +406,24 @@ void cmd_set_dvbs2_constellation(const char *cons) {
 }
 
 void cmd_set_dvbs_freq(const char *freq){
-	g_tx_frequency = strtoul(freq,NULL,0);
-	express_set_freq(g_tx_frequency);
+	g_tx_frequency = strtoull(freq,NULL,0);
+	hw_set_freq((double)g_tx_frequency);
 }
 void cmd_set_dvbs_level(const char *level){
 	g_tx_level = atoi(level);
 	if (g_tx_level > 47) g_tx_level = 47;
-	express_set_level(g_tx_level);
+	if (g_tx_status == TRUE) hw_set_level(g_tx_level);
 }
 void cmd_set_tx_level(int level) {
 	g_tx_level = level;
 	if (g_tx_level > 47) g_tx_level = 47;
 	if (g_tx_level < 0)  g_tx_level = 0;
-	express_set_level(g_tx_level);
+	/*if(g_tx_status == TRUE)*/ hw_set_level(g_tx_level);
 }
 void cmd_set_tx_ports(const char *ports) {
 	g_tx_ports = atoi(ports);
 	g_tx_ports <<= 4;
-	express_set_ports(g_tx_ports);
+	hw_set_ports(g_tx_ports);
 }
 void cmd_set_dvbs_srate(const char *srate){
 	g_tx_sr = atoi(srate);
@@ -476,9 +510,40 @@ void cmd_set_i_dc_offset(int i) {
 void cmd_set_q_dc_offset(int q) {
 	g_q_dc_offset = q;
 }
+void cmd_set_sdrhw_type(const char *hw) {
+	g_sdrhw_type = HW_DATV_EXPRESS;
+	if (strncmp(hw, "EXPRESS", 7) == 0) g_sdrhw_type = HW_DATV_EXPRESS;
+	if (strncmp(hw, "PLUTO", 5)   == 0) g_sdrhw_type = HW_ADALM_PLUTO;
+	if (strncmp(hw, "LIME", 4)    == 0) g_sdrhw_type = HW_LIME_SDR;
+	if (strncmp(hw, "FMCOMMS", 7) == 0) g_sdrhw_type = HW_FMCOMMSx;
+}
+
+void cmd_set_sdr_ip_addr(DWORD a) {
+	g_sdr_ip_addr = a;
+}
+void cmd_set_sdr_ip_addr(const char *ip) {
+	sscanf_s(ip, "%X", &g_sdr_ip_addr);
+}
+
+void cmd_set_TsIn_ip_addr(DWORD a,WORD port,DWORD localnic) {
+	g_TsIn_ip_addr = a;
+	g_TsIn_ip_port = port;
+	g_TsIn_LocalNic = localnic;
+}
 
 void save_config_text( FILE *fp){
 	char text[20];
+
+	strcpy_s(text, "EXPRESS");
+	if (g_sdrhw_type == HW_DATV_EXPRESS) strcpy_s(text, "EXPRESS");
+	if (g_sdrhw_type == HW_LIME_SDR) strcpy_s(text, "LIME");
+	if (g_sdrhw_type == HW_ADALM_PLUTO) strcpy_s(text, "PLUTO");
+	if (g_sdrhw_type == HW_FMCOMMSx) strcpy_s(text, "FMCOMMS");
+	fprintf(fp, "[SDR HW] %s\n", text);
+	
+	sprintf_s(text, 20, "%8X", get_sdr_ip_addr());
+	fprintf(fp, "[SDR IP] %s\n", text);
+
 
 	fprintf(fp,"[ID SERVICE] %d\n",g_service_id); 
     fprintf(fp,"[ID STREAM] %d\n",g_stream_id); 
@@ -518,7 +583,7 @@ void save_config_text( FILE *fp){
 	if (g_txmode == M_DVBT) strcpy_s(text, "DVB-T");
 	fprintf(fp, "[TX MODE] %s\n", text);
 
-    fprintf(fp,"[TX FREQ] %u\n",g_tx_frequency);
+    fprintf(fp,"[TX FREQ] %llu\n",g_tx_frequency);
     fprintf(fp,"[TX LEVEL] %d\n",g_tx_level);
 
 	strcpy_s(text,"1/2");
@@ -530,11 +595,11 @@ void save_config_text( FILE *fp){
     fprintf(fp,"[DVBS FEC] %s\n",text);
 
 	strcpy_s(text, "1/2");
-	if (g_dvbt_fec == CR_12) strcpy_s(text, "1/2");
-	if (g_dvbt_fec == CR_23) strcpy_s(text, "2/3");
-	if (g_dvbt_fec == CR_34) strcpy_s(text, "3/4");
-	if (g_dvbt_fec == CR_56) strcpy_s(text, "5/6");
-	if (g_dvbt_fec == CR_78) strcpy_s(text, "7/8");
+	if (g_dvbt_fec == FEC_12) strcpy_s(text, "1/2");
+	if (g_dvbt_fec == FEC_23) strcpy_s(text, "2/3");
+	if (g_dvbt_fec == FEC_34) strcpy_s(text, "3/4");
+	if (g_dvbt_fec == FEC_56) strcpy_s(text, "5/6");
+	if (g_dvbt_fec == FEC_78) strcpy_s(text, "7/8");
 	fprintf(fp, "[DVBT FEC] %s\n", text);
 
 	strcpy_s(text, "QPSK");
@@ -620,6 +685,10 @@ void save_config_text( FILE *fp){
 	fprintf(fp, "[I DC OFFSET] %d\n", g_i_dc_offset);
 	fprintf(fp, "[Q DC OFFSET] %d\n", g_q_dc_offset);
 
+	fprintf(fp, "[TSIN ADRESS] %d\n", g_TsIn_ip_addr);
+	fprintf(fp, "[TSIN PORT] %d\n", g_TsIn_ip_port);
+
+
 }
 void copy_quoted_string( char *in, char *out ){
 	uint32_t state = 0;
@@ -660,6 +729,15 @@ void parse_config_line( char *line ){
 	}
 	if(value == NULL ) return;
     int len = ie - is;
+
+	if (strncmp("[SDR HW]", item, len) == 0) {
+		cmd_set_sdrhw_type(value);
+		return;
+	}
+	if (strncmp("[SDR IP]", item, len) == 0) {
+		cmd_set_sdr_ip_addr(value);
+		return;
+	}
 
     if(strncmp("[ID SERVICE]",item,len) == 0 ){
 		g_service_id = atoi(value);
@@ -854,6 +932,14 @@ void parse_config_line( char *line ){
 		g_q_dc_offset = atoi(value);
 		return;
 	}
+	if (strncmp("[TSIN ADRESS]]", item, len) == 0) {
+		g_TsIn_ip_addr = atoi(value);
+		return;
+	}
+	if (strncmp("[TSIN PORT]", item, len) == 0) {
+		g_TsIn_ip_port = atoi(value);
+		return;
+	}
 }
 //
 // Read in Configuration information from Disk
@@ -921,72 +1007,24 @@ int LoadOnAirFormatsFromDisk(int nr, CString *fmts)
 	return n;
 }
 
-int ConfigureExpress(void)
-{
-	FILE *fpga,*fx2;
-	char directory[250];
-	char rbfname[80];
-	char ihxname[80];
-
-	int res = 0;
-	switch (g_txmode) {
-	case M_DVBS :
-		sprintf_s(ihxname, "\\datvexpress8.ihx");
-		sprintf_s(rbfname, "\\datvexpressdvbs.rbf");
-		break;
-	case M_DVBS2:
-		sprintf_s(ihxname, "\\datvexpress16.ihx");
-		sprintf_s(rbfname, "\\datvexpressraw16.rbf");
-		break;
-	case M_DVBT:
-		sprintf_s(ihxname, "\\datvexpress16.ihx");
-		sprintf_s(rbfname, "\\datvexpressraw16.rbf");
-		break;
-	}
-	if(GetCurrentDirectory(250,directory)){
-		strncat_s(directory,ihxname,40);
-		if(fopen_s(&fx2,directory,"rb") == 0 )
-		{
-			if(GetCurrentDirectory(250,directory))
-			{
-				strncat_s(directory,rbfname,40);
-				if(fopen_s(&fpga,directory,"rb") == 0 )
-				{
-					if(express_init( fx2, fpga)<0) res = -1;
-					fclose(fpga);
-					fclose(fx2);
-				}
-				else
-				{
-					report_error(ERROR_FPGA_NOT_FOUND);
-					cmd_set_error_text("FPGA .rbf File not found");
-					res = -2;
-				}
-			}
-		}
-		else
-		{
-			report_error(ERROR_FIRMWARE_NOT_FOUND);
-			cmd_set_error_text("FX2 firmware .ihx File not found");
-			res = -3;
-		}
-	}
-	return res;
-}
-void SetExpressChannel(void){
-	express_set_fec(g_dvbs_fec);
-	express_set_freq(g_tx_frequency);
-	express_set_level(g_tx_level);
-	express_set_ical(g_i_dc_offset);
-	express_set_qcal(g_q_dc_offset);
+void SetExpressChannel(void) {
+	hw_set_fec(g_dvbs_fec);
+	hw_set_freq((double)g_tx_frequency);
+	hw_set_ical(g_i_dc_offset);
+	hw_set_qcal(g_q_dc_offset);
 	if (get_txmode() == M_DVBT) {
-		express_set_sr(dvb_t_get_sample_rate());
-	}else express_set_sr(g_tx_sr);
-	express_set_filter(g_dvbs2_rolloff);
+		hw_set_sr(dvb_t_get_sample_rate());
+		hw_set_analogue_lpf(dvb_t_get_channel_bandwidth()*1.5f);
+	}
+	else{
+		hw_set_sr(g_tx_sr);
+		hw_set_analogue_lpf(g_tx_sr*0.75f);
+	}
+	hw_set_filter(g_dvbs2_rolloff);
 }
 void DeConfigureExpress(void)
 {
-	express_deinit();
+	hw_deinit();
 }
 int get_video_codec(void){
 	return g_video_codec;
@@ -1053,11 +1091,11 @@ CString get_current_fec_string(void){
 		if (g_dvbs_fec == FEC_78) fec = "7/8";
 	}
 	if (g_txmode == M_DVBT) {
-		if (g_dvbt_fec == CR_12) fec = "1/2";
-		if (g_dvbt_fec == CR_23) fec = "2/3";
-		if (g_dvbt_fec == CR_34) fec = "3/4";
-		if (g_dvbt_fec == CR_56) fec = "5/6";
-		if (g_dvbt_fec == CR_78) fec = "7/8";
+		if (g_dvbt_fec == FEC_12) fec = "1/2";
+		if (g_dvbt_fec == FEC_23) fec = "2/3";
+		if (g_dvbt_fec == FEC_34) fec = "3/4";
+		if (g_dvbt_fec == FEC_56) fec = "5/6";
+		if (g_dvbt_fec == FEC_78) fec = "7/8";
 	}
 	if (g_txmode == M_DVBS2) {
 		if (g_dvbs2_fec == FEC_14) fec = "1/4";
@@ -1074,7 +1112,7 @@ CString get_current_fec_string(void){
 	}
 	return fec;
 }
-uint32_t get_current_tx_frequency(void){
+uint64_t get_current_tx_frequency(void){
 	return g_tx_frequency;
 }
 int get_current_tx_level(void){
@@ -1087,7 +1125,7 @@ uint32_t get_current_tx_symbol_rate(void){
 void cmd_transmit(void){
 	if (g_system_status == TRUE) {
 		capture_run();
-		express_transmit();
+		hw_transmit();
 		g_tx_status = TRUE;
 	}
 }
@@ -1095,22 +1133,38 @@ void cmd_standby(void){
 	if (g_system_status == TRUE) {
 		tx_buf_empty();
 		capture_pause();
-		express_receive();
+		hw_receive();
+		g_tx_status = FALSE;
+	}
+}
+
+void cmd_ip_transmit(DWORD IP,int Port) {
+	if (g_system_status == TRUE) {
+		TsIn_run();
+		hw_transmit();
+		g_tx_status = TRUE;
+	}
+}
+void cmd_ip_standby(void) {
+	if (g_system_status == TRUE) {
+		tx_buf_empty();
+		TsIn_pause();
+		hw_receive();
 		g_tx_status = FALSE;
 	}
 }
 
 void cmd_tx_frequency( const char * freq){
 	g_tx_frequency = atol(freq);
-	express_set_freq(g_tx_frequency);
+	hw_set_freq((double)g_tx_frequency);
 }
 void cmd_tx_level( const char * level){
 	g_tx_level = atol(level);
-	express_set_level(g_tx_level);
+	hw_set_level(g_tx_level);
 }
 void cmd_tx_symbol_rate( const char *sr){
 	g_tx_sr = atol(sr);
-	express_set_level(g_tx_sr);
+	hw_set_level(g_tx_sr);
 }
 void cmd_tx_fec( const char *fec){
 	g_dvbs_fec = FEC_12;
@@ -1120,20 +1174,18 @@ void cmd_tx_fec( const char *fec){
 	if(strncmp(fec,"5/6",3) == 0) g_dvbs_fec = FEC_56;
 	if(strncmp(fec,"7/8",3) == 0) g_dvbs_fec = FEC_78;
 
-	express_set_fec(g_dvbs_fec);
+	hw_set_fec(g_dvbs_fec);
 }
 void cmd_set_carrier(int chk ){
-	if(chk) 
-		express_set_carrier(true);
-	else
-		express_set_carrier(false);
+	g_tx_carrier = chk;
+	hw_set_carrier(chk);
 }
 void cmd_set_config_filename(CString name) {
 	g_config_filename = name;
 }
 
 int system_restart(void) {
-	if (ConfigureExpress() != 0) return -1;
+	if (hw_init() < 0) return -1;
 	codec_init();
 	SetExpressChannel();
 	configure_si();
@@ -1144,7 +1196,7 @@ int system_restart(void) {
 	params.a_br = get_audio_bitrate();
 	params.v_codec = g_video_codec;
 	params.a_codec = g_audio_codec;
-	params.a_codec = AV_CODEC_ID_MP2;// Force it to this as AAC requires Planar floating point
+	//params.a_codec = AV_CODEC_ID_MP2;// Force it to this as AAC requires Planar floating point
 	// Retrieve the capture devices aspect ratio
 	params.v_ar[0] = 1;
 	params.v_ar[1] = 1;
@@ -1178,7 +1230,7 @@ int system_restart(void) {
 			codec_start(&params);
 			ps_to_ts_init();
 			tx_start();
-			express_receive();
+			hw_receive();
 			return 0;
 		}
 	}
@@ -1198,6 +1250,7 @@ int system_start(const char *name){
 	// Continue
 	tx_buf_init();
 	vb_av_init();
+	udp_init();
 	noise_init();
 
 	CString msg;
@@ -1244,9 +1297,10 @@ int system_start(const char *name){
 }
 void system_stop(void) {
 	if (g_system_status == TRUE) {
-		express_receive();
+		hw_receive();
 		capture_stop();
 		tx_stop();
 		stop_log();
+		hw_deinit();
 	}
 }

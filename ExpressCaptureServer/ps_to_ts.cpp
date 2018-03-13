@@ -18,10 +18,15 @@ static CRITICAL_SECTION g_mutex;
 void ts_write_transport_queue( uint8_t *tp ){
 	uint8_t *b;
 	EnterCriticalSection( &g_mutex );
-    tp_log( tp );
+    //tp_log( tp );
     b = alloc_copy_tx_buff(tp);// Copy to a buffer
     post_tx_buff(b);// Queue the buffer for transmission
 	pcr_increment_clock();// Use the bitstream to driver timers
+	while (get_tx_buf_percent() < 25) {
+		b = alloc_copy_tx_buff(null_pkt());// Copy to a buffer
+		post_tx_buff(b);// Queue the buffer for transmission
+		pcr_increment_clock();// Use the bitstream to driver timers
+	}
 	LeaveCriticalSection( &g_mutex );
 }
 

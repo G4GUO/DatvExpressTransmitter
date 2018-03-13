@@ -55,11 +55,13 @@ void create_correction_table( int N, int IR )
             sinc = 1.0f;
         else{
             x = (float)M_PI*f/fsr;
-            sinc = sin(x)/x;
+            sinc = sinf(x)/x;
         }
-        m_c[i+(N/2)]   = 1.0f/sinc;
-        m_c[(N/2)-i-1] = 1.0f/sinc;
-        f += fstep;
+//        m_c[i+(N/2)]   = 1.0f/sinc;
+//        m_c[(N/2)-i-1] = 1.0f/sinc;
+		m_c[i + (N / 2)] = 1.0f;
+		m_c[(N / 2) - i - 1] = 1.0f;
+		f += fstep;
     }
 }
 //

@@ -2,7 +2,7 @@
 #include "math.h"
 #include "DVBS2.h"
 
-#define CP 0x7FFF
+#define CP 0x3FFF
 
 void DVBS2::modulator_configuration(void)
 {

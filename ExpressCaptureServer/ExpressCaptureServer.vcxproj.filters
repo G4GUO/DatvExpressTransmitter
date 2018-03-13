@@ -105,6 +105,18 @@
     <ClInclude Include="DialogNoiseTool.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="extender.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="express.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="hardware.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="liquiddsp\liquid.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ExpressCaptureServer.cpp">
@@ -312,6 +324,27 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="DialogNoiseTool.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="hardware.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="extender.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="fmcomms.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="lime.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="rrc.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="dvb_s.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="UdpTsIn.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
